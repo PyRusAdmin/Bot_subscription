@@ -2,7 +2,6 @@ import asyncio
 import os
 
 from aiogram import Bot, Dispatcher, F
-from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.types import Message, CallbackQuery
@@ -12,15 +11,12 @@ from telethon import TelegramClient
 from telethon.errors import FloodWaitError
 from telethon.tl.functions.channels import JoinChannelRequest
 
-from handlers.handlers import register_handlers_send_log
+from handlers.handlers import register_core_handlers
 from keyboards import main_keyboard, admin_keyboard
 from states.states import UploadSession, AdminSettings
 from system.system import router, accounts_db, ADMIN_IDS, SESSIONS_DIR, API_ID, API_HASH, settings_db, BOT_TOKEN
 
 logger.add("log/log.log", rotation="10 MB")
-
-
-
 
 
 # Загрузка сессии
@@ -401,7 +397,7 @@ async def main():
         dp = Dispatcher(storage=MemoryStorage())
         dp.include_router(router)
 
-        register_handlers_send_log()
+        register_core_handlers()
 
         logger.success("🤖 Бот запущен...")
         await dp.start_polling(bot)
