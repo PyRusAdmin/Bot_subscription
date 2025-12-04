@@ -5,7 +5,6 @@ import os
 from aiogram import Bot, Dispatcher, F
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
-from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.types import Message, CallbackQuery
 from aiogram.utils.token import TokenValidationError
@@ -22,35 +21,12 @@ from system.system import router, accounts_db, ADMIN_IDS, SESSIONS_DIR, API_ID, 
 logger.add("log/log.log", rotation="10 MB")
 
 
-# FSM States
-class UploadSession(StatesGroup):
-    """
-    Конечный автомат для загрузки сессии
-
-    Состояния:
-    waiting_for_session - ожидание загрузки файла сессии
-    """
-    waiting_for_session = State()
-
-
-class AdminSettings(StatesGroup):
-    """
-    Конечный автомат для настроек администратора
-
-    Состояния:
-    waiting_for_channel - ожидание ввода канала
-    waiting_for_interval - ожидание ввода интервала
-    """
-    waiting_for_channel = State()
-    waiting_for_interval = State()
-
-
 @router.message(Command("start"))
 async def cmd_start(message: Message):
     """
     Обработчик команды /start
 
-    Создает основное меню бота и приветствует пользователя
+    Создает основное меню бота и приветствует пользователя,
     Регистрирует пользователя в базе данных, если его нет
 
     :param message: Объект сообщения от пользователя
