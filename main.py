@@ -46,18 +46,7 @@ router = Router()
 # Клавиатуры
 from keyboards import main_keyboard, admin_keyboard
 
-# Команды
-@router.message(Command("log"))
-async def send_log(message: Message):
-    if message.from_user.id not in ADMIN_IDS:
-        await message.answer("❌ Доступ запрещен")
-        return
-    
-    log_file = FSInputFile("log/log.log")
-    try:
-        await message.answer_document(log_file, caption="📄 Логи бота")
-    except Exception as e:
-        await message.answer(f"❌ Не удалось отправить логи: {str(e)}")
+
 
 @router.message(Command("start"))
 async def cmd_start(message: Message):
