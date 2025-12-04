@@ -7,14 +7,18 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.types import Message, FSInputFile, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
+from aiogram.utils.token import TokenValidationError
 from telethon import TelegramClient
 from telethon.errors import SessionPasswordNeededError, FloodWaitError
 from telethon.tl.functions.channels import JoinChannelRequest
 import json
+from loguru import logger
 
 # Конфигурация
 import dotenv
 import os
+
+logger.add("log/log.log", rotation="10 MB")
 
 dotenv.load_dotenv()
 
@@ -320,12 +324,16 @@ async def main():
     if not all([BOT_TOKEN, API_ID, API_HASH]):
         raise ValueError("❌ Не все переменные окружения загружены. Проверьте файл .env")
     
-    bot = Bot(token=BOT_TOKEN)
-    dp = Dispatcher(storage=MemoryStorage())
-    dp.include_router(router)
+    try:
+        bot = Bot(token=BOT_TOKEN)
+        dp = Dispatcher(storage=MemoryStorage())
+        dp.include_router(router)
 
-    print("🤖 Бот запущен...")
-    await dp.start_polling(bot)
+        print("🤖 Бот запущен...")
+        await dp.start_polling(bot)
+    except TokenValidationError:
+        logger.error("❌ Неверный токен API")
+
 
 if __name__ == "__main__":
     asyncio.run(main())
