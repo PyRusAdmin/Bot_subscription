@@ -2,6 +2,8 @@
 from aiogram.filters import Command
 from aiogram.types import Message, FSInputFile
 
+from system.system import ADMIN_IDS, router
+
 
 # Команды
 @router.message(Command("log"))
@@ -22,7 +24,5 @@ async def send_log(message: Message):
         await message.answer(f"❌ Не удалось отправить логи: {str(e)}")
 
 
-def register_handlers_publish_advertisement_handler() -> None:
-    router.callback_query.register(publish_advertisement_handler)  # ✍ Публикация объявления
-    router.message.register(skip_photo)  # пропустить фото и опубликовать только текст
-    router.message.register(start_news_sending)  # Начало отправки новости — только для админов
+def register_handlers_send_log() -> None:
+    router.message.register(send_log)  # Отправляет логи бота по запросу администратора, прописанного в .env файле

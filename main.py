@@ -2,20 +2,22 @@ import asyncio
 import os
 
 # Конфигурация
-import dotenv
-from aiogram import Bot, Dispatcher, F, Router
+from aiogram import Bot, Dispatcher, F
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.storage.memory import MemoryStorage
-from aiogram.types import Message, FSInputFile, CallbackQuery
+from aiogram.types import Message, CallbackQuery
 from aiogram.utils.token import TokenValidationError
 from loguru import logger
 from telethon import TelegramClient
 from telethon.errors import FloodWaitError
 from telethon.tl.functions.channels import JoinChannelRequest
+
+from handlers.handlers import register_handlers_send_log
 # Клавиатуры
 from keyboards import main_keyboard, admin_keyboard
+from system.system import router, accounts_db, ADMIN_IDS, SESSIONS_DIR, API_ID, API_HASH, settings_db, BOT_TOKEN
 
 logger.add("log/log.log", rotation="10 MB")
 
@@ -305,7 +307,9 @@ async def main():
         dp = Dispatcher(storage=MemoryStorage())
         dp.include_router(router)
 
-        print("🤖 Бот запущен...")
+        register_handlers_send_log()
+
+        logger.success("🤖 Бот запущен...")
         await dp.start_polling(bot)
     except TokenValidationError:
         logger.error("❌ Неверный токен API")
