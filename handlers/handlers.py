@@ -1,8 +1,34 @@
 # Конфигурация
 from aiogram.filters import Command
-from aiogram.types import Message, FSInputFile
+from aiogram.types import FSInputFile
+from aiogram.types import Message
 
-from system.system import ADMIN_IDS, router
+from keyboards import main_keyboard
+from system.system import router, accounts_db, ADMIN_IDS
+
+
+@router.message(Command("start"))
+async def cmd_start(message: Message):
+    """
+    Обработчик команды /start
+
+    Создает основное меню бота и приветствует пользователя,
+    Регистрирует пользователя в базе данных, если его нет
+
+    :param message: Объект сообщения от пользователя
+    :return: None
+    """
+    user_id = message.from_user.id
+    if user_id not in accounts_db:
+        accounts_db[user_id] = []
+
+    is_admin = user_id in ADMIN_IDS
+    await message.answer(
+        f"👋 Добро пожаловать!\n\n"
+        f"Этот бот помогает управлять Telegram аккаунтами.\n\n"
+        f"Выберите действие:",
+        reply_markup=main_keyboard(is_admin)
+    )
 
 
 # Команды
