@@ -24,16 +24,38 @@ logger.add("log/log.log", rotation="10 MB")
 
 # FSM States
 class UploadSession(StatesGroup):
+    """
+    Конечный автомат для загрузки сессии
+
+    Состояния:
+    waiting_for_session - ожидание загрузки файла сессии
+    """
     waiting_for_session = State()
 
 
 class AdminSettings(StatesGroup):
+    """
+    Конечный автомат для настроек администратора
+
+    Состояния:
+    waiting_for_channel - ожидание ввода канала
+    waiting_for_interval - ожидание ввода интервала
+    """
     waiting_for_channel = State()
     waiting_for_interval = State()
 
 
 @router.message(Command("start"))
 async def cmd_start(message: Message):
+    """
+    Обработчик команды /start
+
+    Создает основное меню бота и приветствует пользователя
+    Регистрирует пользователя в базе данных, если его нет
+
+    :param message: Объект сообщения от пользователя
+    :return: None
+    """
     user_id = message.from_user.id
     if user_id not in accounts_db:
         accounts_db[user_id] = []
@@ -50,6 +72,16 @@ async def cmd_start(message: Message):
 # Загрузка сессии
 @router.callback_query(F.data == "upload_session")
 async def upload_session_start(callback: CallbackQuery, state: FSMContext):
+    """
+    Обработчик кнопки загрузки сессии
+
+    Запускает процесс загрузки сессии и переходит в состояние ожидания файла
+    Отображает инструкции пользователю
+
+    :param callback: Объект callback-запроса
+    :param state: Контекст состояния FSM
+    :return: None
+    """
     await callback.message.answer(
         "📤 Отправьте файл сессии (.session)\n\n"
         "Поддерживаются форматы: Telethon, Pyrogram"
@@ -60,6 +92,16 @@ async def upload_session_start(callback: CallbackQuery, state: FSMContext):
 
 @router.message(UploadSession.waiting_for_session, F.document)
 async def process_session_upload(message: Message, state: FSMContext):
+    """
+    Обработчик загрузки файла сессии
+
+    Принимает файл сессии, сохраняет его на диск и добавляет в базу данных
+    Поддерживает только файлы с расширением .session
+
+    :param message: Объект сообщения с документом
+    :param state: Контекст состояния FSM
+    :return: None
+    """
     user_id = message.from_user.id
     document = message.document
 
@@ -93,6 +135,15 @@ async def process_session_upload(message: Message, state: FSMContext):
 # Просмотр аккаунтов
 @router.callback_query(F.data == "my_accounts")
 async def show_accounts(callback: CallbackQuery):
+    """
+    Обработчик кнопки просмотра аккаунтов
+
+    Отображает список всех загруженных пользователем аккаунтов
+    Показывает статус, телефон и имя файла для каждого аккаунта
+
+    :param callback: Объект callback-запроса
+    :return: None
+    """
     user_id = callback.from_user.id
     accounts = accounts_db.get(user_id, [])
 
@@ -115,6 +166,16 @@ async def show_accounts(callback: CallbackQuery):
 # Проверка аккаунтов
 @router.callback_query(F.data == "check_accounts")
 async def check_accounts(callback: CallbackQuery):
+    """
+    Обработчик проверки аккаунтов
+
+    Проверяет авторизацию каждого аккаунта пользователя
+    Обновляет статусы аккаунтов в базе данных
+    Отображает результаты проверки
+
+    :param callback: Объект callback-запроса
+    :return: None
+    """
     user_id = callback.from_user.id
     accounts = accounts_db.get(user_id, [])
 
@@ -158,6 +219,16 @@ async def check_accounts(callback: CallbackQuery):
 # Подписка на канал
 @router.callback_query(F.data == "subscribe_channel")
 async def subscribe_channel(callback: CallbackQuery):
+    """
+    Обработчик подписки на канал
+
+    Подписывает все активные аккаунты пользователя на целевой канал
+    Соблюдает заданный интервал между действиями
+    Отображает статистику выполнения операции
+
+    :param callback: Объект callback-запроса
+    :return: None
+    """
     user_id = callback.from_user.id
     accounts = [acc for acc in accounts_db.get(user_id, []) if acc["status"] == "active"]
 
@@ -222,6 +293,16 @@ async def subscribe_channel(callback: CallbackQuery):
 # Админ настройки
 @router.callback_query(F.data == "admin_settings")
 async def admin_settings(callback: CallbackQuery):
+    """
+    Обработчик админ-панели
+
+    Отображает текущие настройки бота
+    Доступно только для пользователей из ADMIN_IDS
+    Предоставляет меню для изменения настроек
+
+    :param callback: Объект callback-запроса
+    :return: None
+    """
     if callback.from_user.id not in ADMIN_IDS:
         await callback.answer("❌ Доступ запрещен", show_alert=True)
         return
@@ -238,6 +319,17 @@ async def admin_settings(callback: CallbackQuery):
 
 @router.callback_query(F.data == "set_channel")
 async def set_channel_start(callback: CallbackQuery, state: FSMContext):
+    """
+    Обработчик установки целевого канала
+
+    Запускает процесс установки канала для подписки
+    Переходит в состояние ожидания ввода канала
+    Доступно только для администраторов
+
+    :param callback: Объект callback-запроса
+    :param state: Контекст состояния FSM
+    :return: None
+    """
     if callback.from_user.id not in ADMIN_IDS:
         await callback.answer("❌ Доступ запрещен", show_alert=True)
         return
@@ -252,6 +344,16 @@ async def set_channel_start(callback: CallbackQuery, state: FSMContext):
 
 @router.message(AdminSettings.waiting_for_channel)
 async def set_channel_process(message: Message, state: FSMContext):
+    """
+    Обработчик установки канала
+
+    Сохраняет введенный канал в настройки
+    Подтверждает успешную установку
+
+    :param message: Объект сообщения с названием канала
+    :param state: Контекст состояния FSM
+    :return: None
+    """
     settings_db["target_channel"] = message.text.strip()
     await message.answer(
         f"✅ Канал установлен: {settings_db['target_channel']}",
@@ -262,6 +364,17 @@ async def set_channel_process(message: Message, state: FSMContext):
 
 @router.callback_query(F.data == "set_interval")
 async def set_interval_start(callback: CallbackQuery, state: FSMContext):
+    """
+    Обработчик установки интервала
+
+    Запускает процесс установки интервала между действиями
+    Переходит в состояние ожидания ввода интервала
+    Доступно только для администраторов
+
+    :param callback: Объект callback-запроса
+    :param state: Контекст состояния FSM
+    :return: None
+    """
     if callback.from_user.id not in ADMIN_IDS:
         await callback.answer("❌ Доступ запрещен", show_alert=True)
         return
@@ -273,6 +386,17 @@ async def set_interval_start(callback: CallbackQuery, state: FSMContext):
 
 @router.message(AdminSettings.waiting_for_interval)
 async def set_interval_process(message: Message, state: FSMContext):
+    """
+    Обработчик установки интервала
+
+    Сохраняет введенный интервал в настройки
+    Проверяет корректность значения (целое число > 0)
+    Подтверждает успешную установку
+
+    :param message: Объект сообщения с интервалом в секундах
+    :param state: Контекст состояния FSM
+    :return: None
+    """
     try:
         interval = int(message.text)
         if interval < 1:
@@ -289,6 +413,15 @@ async def set_interval_process(message: Message, state: FSMContext):
 
 @router.callback_query(F.data == "back_to_main")
 async def back_to_main(callback: CallbackQuery):
+    """
+    Обработчик возврата в главное меню
+
+    Отображает основное меню бота
+    Завершает текущую операцию и возвращает пользователя в главное меню
+
+    :param callback: Объект callback-запроса
+    :return: None
+    """
     await callback.message.answer(
         "Главное меню:",
         reply_markup=main_keyboard(callback.from_user.id in ADMIN_IDS)
@@ -298,6 +431,13 @@ async def back_to_main(callback: CallbackQuery):
 
 # Запуск бота
 async def main():
+    """
+    Основная функция запуска бота
+
+    Инициализирует бота, диспетчер и регистрирует обработчики
+    Запускает polling для получения обновлений
+    Обрабатывает ошибки валидации токена
+    """
     # Проверка загрузки переменных окружения
     if not all([BOT_TOKEN, API_ID, API_HASH]):
         raise ValueError("❌ Не все переменные окружения загружены. Проверьте файл .env")
