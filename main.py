@@ -14,38 +14,20 @@ from loguru import logger
 from telethon import TelegramClient
 from telethon.errors import FloodWaitError
 from telethon.tl.functions.channels import JoinChannelRequest
+# Клавиатуры
+from keyboards import main_keyboard, admin_keyboard
 
 logger.add("log/log.log", rotation="10 MB")
 
-dotenv.load_dotenv()
-
-BOT_TOKEN = os.getenv('BOT_TOKEN')
-API_ID = int(os.getenv('API_ID'))
-API_HASH = os.getenv('API_HASH')
-ADMIN_IDS = eval(os.getenv('ADMIN_IDS'))  # Преобразуем строку в список
-
-# Директории
-SESSIONS_DIR = "sessions"
-os.makedirs(SESSIONS_DIR, exist_ok=True)
-
-# Хранилище данных
-accounts_db = {}  # {user_id: [{"session": "path", "phone": "phone", "status": "active"}]}
-settings_db = {"target_channel": None, "interval": 60}  # Настройки подписки
 
 # FSM States
 class UploadSession(StatesGroup):
     waiting_for_session = State()
 
+
 class AdminSettings(StatesGroup):
     waiting_for_channel = State()
     waiting_for_interval = State()
-
-# Роутер
-router = Router()
-
-# Клавиатуры
-from keyboards import main_keyboard, admin_keyboard
-
 
 
 @router.message(Command("start"))
@@ -62,6 +44,7 @@ async def cmd_start(message: Message):
         reply_markup=main_keyboard(is_admin)
     )
 
+
 # Загрузка сессии
 @router.callback_query(F.data == "upload_session")
 async def upload_session_start(callback: CallbackQuery, state: FSMContext):
@@ -71,6 +54,7 @@ async def upload_session_start(callback: CallbackQuery, state: FSMContext):
     )
     await state.set_state(UploadSession.waiting_for_session)
     await callback.answer()
+
 
 @router.message(UploadSession.waiting_for_session, F.document)
 async def process_session_upload(message: Message, state: FSMContext):
@@ -103,6 +87,7 @@ async def process_session_upload(message: Message, state: FSMContext):
     )
     await state.clear()
 
+
 # Просмотр аккаунтов
 @router.callback_query(F.data == "my_accounts")
 async def show_accounts(callback: CallbackQuery):
@@ -123,6 +108,7 @@ async def show_accounts(callback: CallbackQuery):
 
     await callback.message.answer(text, reply_markup=main_keyboard(user_id in ADMIN_IDS))
     await callback.answer()
+
 
 # Проверка аккаунтов
 @router.callback_query(F.data == "check_accounts")
@@ -165,6 +151,7 @@ async def check_accounts(callback: CallbackQuery):
         reply_markup=main_keyboard(user_id in ADMIN_IDS)
     )
     await callback.answer()
+
 
 # Подписка на канал
 @router.callback_query(F.data == "subscribe_channel")
@@ -229,6 +216,7 @@ async def subscribe_channel(callback: CallbackQuery):
     )
     await callback.answer()
 
+
 # Админ настройки
 @router.callback_query(F.data == "admin_settings")
 async def admin_settings(callback: CallbackQuery):
@@ -245,6 +233,7 @@ async def admin_settings(callback: CallbackQuery):
     await callback.message.answer(text, reply_markup=admin_keyboard())
     await callback.answer()
 
+
 @router.callback_query(F.data == "set_channel")
 async def set_channel_start(callback: CallbackQuery, state: FSMContext):
     if callback.from_user.id not in ADMIN_IDS:
@@ -258,6 +247,7 @@ async def set_channel_start(callback: CallbackQuery, state: FSMContext):
     await state.set_state(AdminSettings.waiting_for_channel)
     await callback.answer()
 
+
 @router.message(AdminSettings.waiting_for_channel)
 async def set_channel_process(message: Message, state: FSMContext):
     settings_db["target_channel"] = message.text.strip()
@@ -266,6 +256,7 @@ async def set_channel_process(message: Message, state: FSMContext):
         reply_markup=admin_keyboard()
     )
     await state.clear()
+
 
 @router.callback_query(F.data == "set_interval")
 async def set_interval_start(callback: CallbackQuery, state: FSMContext):
@@ -276,6 +267,7 @@ async def set_interval_start(callback: CallbackQuery, state: FSMContext):
     await callback.message.answer("Отправьте интервал в секундах (например: 60)")
     await state.set_state(AdminSettings.waiting_for_interval)
     await callback.answer()
+
 
 @router.message(AdminSettings.waiting_for_interval)
 async def set_interval_process(message: Message, state: FSMContext):
@@ -292,6 +284,7 @@ async def set_interval_process(message: Message, state: FSMContext):
     except:
         await message.answer("❌ Укажите корректное число секунд")
 
+
 @router.callback_query(F.data == "back_to_main")
 async def back_to_main(callback: CallbackQuery):
     await callback.message.answer(
@@ -300,12 +293,13 @@ async def back_to_main(callback: CallbackQuery):
     )
     await callback.answer()
 
+
 # Запуск бота
 async def main():
     # Проверка загрузки переменных окружения
     if not all([BOT_TOKEN, API_ID, API_HASH]):
         raise ValueError("❌ Не все переменные окружения загружены. Проверьте файл .env")
-    
+
     try:
         bot = Bot(token=BOT_TOKEN)
         dp = Dispatcher(storage=MemoryStorage())
