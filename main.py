@@ -13,10 +13,15 @@ from telethon.tl.functions.channels import JoinChannelRequest
 import json
 
 # Конфигурация
-BOT_TOKEN = "YOUR_BOT_TOKEN"  # Токен вашего бота
-API_ID = 12345  # Ваш API ID от my.telegram.org
-API_HASH = "your_api_hash"  # Ваш API Hash
-ADMIN_IDS = [123456789]  # ID администраторов
+import dotenv
+import os
+
+dotenv.load_dotenv()
+
+BOT_TOKEN = os.getenv('BOT_TOKEN')
+API_ID = int(os.getenv('API_ID'))
+API_HASH = os.getenv('API_HASH')
+ADMIN_IDS = eval(os.getenv('ADMIN_IDS'))  # Преобразуем строку в список
 
 # Директории
 SESSIONS_DIR = "sessions"
@@ -311,6 +316,10 @@ async def back_to_main(callback: CallbackQuery):
 
 # Запуск бота
 async def main():
+    # Проверка загрузки переменных окружения
+    if not all([BOT_TOKEN, API_ID, API_HASH]):
+        raise ValueError("❌ Не все переменные окружения загружены. Проверьте файл .env")
+    
     bot = Bot(token=BOT_TOKEN)
     dp = Dispatcher(storage=MemoryStorage())
     dp.include_router(router)
