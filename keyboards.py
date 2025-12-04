@@ -2,6 +2,11 @@ from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 
 def main_keyboard(is_admin=False):
+    """
+    Главная клавиатура бота (пользователя)
+    :param is_admin:
+    :return:
+    """
     buttons = [
         [InlineKeyboardButton(text="📤 Загрузить сессию", callback_data="upload_session")],
         [InlineKeyboardButton(text="📋 Мои аккаунты", callback_data="my_accounts")],
@@ -14,6 +19,10 @@ def main_keyboard(is_admin=False):
 
 
 def admin_keyboard():
+    """
+    Клавиатура для администратора бота. ID админа берется из .env файла
+    :return:
+    """
     return InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="📢 Установить канал", callback_data="set_channel")],
         [InlineKeyboardButton(text="⏱ Установить интервал", callback_data="set_interval")],

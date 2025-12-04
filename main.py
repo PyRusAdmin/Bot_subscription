@@ -1,22 +1,19 @@
 import asyncio
 import os
-from datetime import datetime
-from aiogram import Bot, Dispatcher, F, Router
-from aiogram.filters import Command, StateFilter
-from aiogram.fsm.context import FSMContext
-from aiogram.fsm.state import State, StatesGroup
-from aiogram.fsm.storage.memory import MemoryStorage
-from aiogram.types import Message, FSInputFile, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
-from aiogram.utils.token import TokenValidationError
-from telethon import TelegramClient
-from telethon.errors import SessionPasswordNeededError, FloodWaitError
-from telethon.tl.functions.channels import JoinChannelRequest
-import json
-from loguru import logger
 
 # Конфигурация
 import dotenv
-import os
+from aiogram import Bot, Dispatcher, F, Router
+from aiogram.filters import Command
+from aiogram.fsm.context import FSMContext
+from aiogram.fsm.state import State, StatesGroup
+from aiogram.fsm.storage.memory import MemoryStorage
+from aiogram.types import Message, FSInputFile, CallbackQuery
+from aiogram.utils.token import TokenValidationError
+from loguru import logger
+from telethon import TelegramClient
+from telethon.errors import FloodWaitError
+from telethon.tl.functions.channels import JoinChannelRequest
 
 logger.add("log/log.log", rotation="10 MB")
 
@@ -47,23 +44,7 @@ class AdminSettings(StatesGroup):
 router = Router()
 
 # Клавиатуры
-def main_keyboard(is_admin=False):
-    buttons = [
-        [InlineKeyboardButton(text="📤 Загрузить сессию", callback_data="upload_session")],
-        [InlineKeyboardButton(text="📋 Мои аккаунты", callback_data="my_accounts")],
-        [InlineKeyboardButton(text="✅ Проверить аккаунты", callback_data="check_accounts")],
-        [InlineKeyboardButton(text="➕ Подписаться на канал", callback_data="subscribe_channel")]
-    ]
-    if is_admin:
-        buttons.append([InlineKeyboardButton(text="⚙️ Настройки (Админ)", callback_data="admin_settings")])
-    return InlineKeyboardMarkup(inline_keyboard=buttons)
-
-def admin_keyboard():
-    return InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="📢 Установить канал", callback_data="set_channel")],
-        [InlineKeyboardButton(text="⏱ Установить интервал", callback_data="set_interval")],
-        [InlineKeyboardButton(text="🔙 Назад", callback_data="back_to_main")]
-    ])
+from keyboards import main_keyboard, admin_keyboard
 
 # Команды
 @router.message(Command("log"))
