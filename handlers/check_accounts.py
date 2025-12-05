@@ -62,5 +62,13 @@ async def check_accounts(callback: CallbackQuery):
     await callback.answer()
 
 
-def register_check_accounts_handlers():
+def register_check_accounts_handlers() -> None:
+    """
+    Регистрирует обработчики команд для проверки аккаунтов
+
+    Подключает обработчик команды /check_accounts к роутеру бота.
+    Вызывается при инициализации бота в основном файле.
+
+    :return: None
+    """
     router.callback_query.register(check_accounts)
