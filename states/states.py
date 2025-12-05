@@ -12,6 +12,16 @@ class UploadSession(StatesGroup):
     waiting_for_session = State()
 
 
+class DeleteSession(StatesGroup):
+    """
+    Конечный автомат для удаления сессии
+
+    Состояния:
+    waiting_for_session - ожидание ввода имени сессии
+    """
+    waiting_for_session = State()
+
+
 class AdminSettings(StatesGroup):
     """
     Конечный автомат для настроек администратора

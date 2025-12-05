@@ -1,15 +1,17 @@
 import os
 
 from aiogram import F
+from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, CallbackQuery
 from loguru import logger
 
 from keyboards import main_keyboard
+from states.states import DeleteSession
 from system.system import router, accounts_db, ADMIN_IDS
 
 
 @router.callback_query(F.data == "delete_session")
-async def delete_session_start(callback: CallbackQuery):
+async def delete_session_start(callback: CallbackQuery, state: FSMContext):
     """
     Обработчик кнопки удаления сессии
 
@@ -19,16 +21,19 @@ async def delete_session_start(callback: CallbackQuery):
     Отображает инструкции по формату ввода.
 
     :param callback: Объект callback-запроса
+    :param state: Объект состояния FSM
     :return: None
     """
     await callback.message.answer(
         "🗑 Отправьте полное название сессии для удаления (например: session_name.session)"
     )
+
+    await state.set_state(DeleteSession.waiting_for_session)
     await callback.answer()
 
 
-@router.message(F.text)
-async def process_delete_session(message: Message):
+@router.message(DeleteSession.waiting_for_session, F.text)
+async def process_delete_session(message: Message, state: FSMContext):
     """
     Обработчик удаления файла сессии
 
@@ -36,15 +41,23 @@ async def process_delete_session(message: Message):
     удаляет файл сессии из папки sessions и удаляет запись из базы данных.
 
     :param message: Объект сообщения с названием сессии
+    :param state: Объект состояния FSM
     :return: None
     """
     user_id = message.from_user.id
-    session_name = message.text.strip()
+    session_name = message.text
+    logger.info(f"Удаление сессии пользователем: {session_name}")
+
+    try:
+        file_path = f"sessions/{session_name}"
+        os.remove(file_path)
+    except FileNotFoundError:
+        await message.answer(f"Сессия '{session_name}' не найдена. Проверьте правильность написания.")
 
     # Проверяем наличие сессий у пользователя
-    if user_id not in accounts_db or not accounts_db[user_id]:
-        await message.answer("У вас нет загруженных сессий")
-        return
+    # if user_id not in accounts_db or not accounts_db[user_id]:
+    #     await message.answer("У вас нет загруженных сессий")
+    #     return
 
     # Ищем сессию по имени
     session_index = None
@@ -75,6 +88,8 @@ async def process_delete_session(message: Message):
         )
     except Exception as e:
         await message.answer(f"❌ Ошибка при удалении сессии: {str(e)}")
+
+    await state.clear()
 
 
 def register_delete_session_handlers() -> None:
