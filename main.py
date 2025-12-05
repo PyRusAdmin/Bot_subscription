@@ -328,13 +328,15 @@ async def back_to_main(callback: CallbackQuery):
 
 
 # Запуск бота
-async def main():
+async def main() -> None:
     """
     Основная функция запуска бота
 
     Инициализирует бота, диспетчер и регистрирует обработчики.
     Запускает polling для получения обновлений.
     Обрабатывает ошибки валидации токена.
+
+    :return: None
     """
     # Проверка загрузки переменных окружения
     if not all([BOT_TOKEN, API_ID, API_HASH]):

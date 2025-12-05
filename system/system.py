@@ -1,14 +1,15 @@
 import os
 
-# Конфигурация
 import dotenv
 from aiogram import Router
 
-# Роутер
+# Создание основного роутера для бота
 router = Router()
 
+# Загрузка переменных окружения из .env файла
 dotenv.load_dotenv()
 
+# Конфигурационные переменные из .env файла
 BOT_TOKEN = os.getenv('BOT_TOKEN')
 API_ID = int(os.getenv('API_ID'))
 API_HASH = os.getenv('API_HASH')
@@ -16,8 +17,9 @@ ADMIN_IDS = eval(os.getenv('ADMIN_IDS'))  # Преобразуем строку 
 
 # Директории
 SESSIONS_DIR = "sessions"
+# Создание директории для сессий, если она не существует
 os.makedirs(SESSIONS_DIR, exist_ok=True)
 
 # Хранилище данных
-accounts_db = {}  # {user_id: [{"session": "path", "phone": "phone", "status": "active"}]}
-settings_db = {"target_channel": None, "interval": 60}  # Настройки подписки
+accounts_db = {}
+settings_db = {"target_channel": None, "interval": 60}
