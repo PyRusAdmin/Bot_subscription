@@ -11,12 +11,12 @@ from system.system import router, accounts_db, ADMIN_IDS, SESSIONS_DIR
 
 # Загрузка сессии
 @router.callback_query(F.data == "upload_session")
-async def upload_session_start(callback: CallbackQuery, state: FSMContext):
+async def upload_session_start(callback: CallbackQuery, state: FSMContext) -> None:
     """
     Обработчик кнопки загрузки сессии
 
-    Запускает процесс приема сессии в формате Telethon (название.session). Загрузки сессии в папку sessions в дальнейшем и переходит в состояние ожидания файла.
-    Отображает инструкции пользователю
+    Запускает процесс загрузки сессии и переходит в состояние ожидания файла.
+    Отображает инструкции пользователю по формату загружаемого файла.
 
     :param callback: Объект callback-запроса
     :param state: Контекст состояния FSM
@@ -31,12 +31,13 @@ async def upload_session_start(callback: CallbackQuery, state: FSMContext):
 
 
 @router.message(UploadSession.waiting_for_session, F.document)
-async def process_session_upload(message: Message, state: FSMContext):
+async def process_session_upload(message: Message, state: FSMContext) -> None:
     """
     Обработчик загрузки файла сессии
 
-    Принимает файл сессии, сохраняет его на диск и добавляет в базу данных.
-    Поддерживает только файлы с расширением .session
+    Принимает файл сессии в формате Telethon (.session),
+    сохраняет его на диск в папку sessions и добавляет информацию в базу данных.
+    Проверяет корректность формата файла перед сохранением.
 
     :param message: Объект сообщения с документом
     :param state: Контекст состояния FSM
@@ -72,5 +73,13 @@ async def process_session_upload(message: Message, state: FSMContext):
     await state.clear()
 
 
-def register_upload_session_start():
+def register_upload_session_handlers() -> None:
+    """
+    Регистрирует обработчики команд для загрузки сессий
+
+    Подключает обработчики команды upload_session к роутеру бота.
+    Вызывается при инициализации бота в основном файле.
+
+    :return: None
+    """
     router.callback_query.register(upload_session_start)
