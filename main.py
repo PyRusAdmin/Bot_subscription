@@ -1,5 +1,4 @@
 import asyncio
-import os
 
 from aiogram import Bot, Dispatcher, F
 from aiogram.fsm.context import FSMContext
@@ -15,8 +14,8 @@ from handlers.check_accounts import register_check_accounts_handlers
 from handlers.handlers import register_core_handlers
 from handlers.upload_session_start import register_upload_session_start
 from keyboards import main_keyboard, admin_keyboard
-from states.states import UploadSession, AdminSettings
-from system.system import router, accounts_db, ADMIN_IDS, SESSIONS_DIR, API_ID, API_HASH, settings_db, BOT_TOKEN
+from states.states import AdminSettings
+from system.system import router, accounts_db, ADMIN_IDS, API_ID, API_HASH, settings_db, BOT_TOKEN
 
 logger.add("log/log.log", rotation="10 MB")
 

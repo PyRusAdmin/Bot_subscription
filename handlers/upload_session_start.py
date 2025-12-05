@@ -1,26 +1,12 @@
-
-import asyncio
 import os
 
-from aiogram import Bot, Dispatcher, F
+from aiogram import F
 from aiogram.fsm.context import FSMContext
-from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.types import Message, CallbackQuery
-from aiogram.utils.token import TokenValidationError
-from loguru import logger
-from telethon import TelegramClient
-from telethon.errors import FloodWaitError
-from telethon.tl.functions.channels import JoinChannelRequest
 
-from handlers.check_accounts import register_check_accounts_handlers
-from handlers.handlers import register_core_handlers
-from keyboards import main_keyboard, admin_keyboard
-from states.states import UploadSession, AdminSettings
-from system.system import router, accounts_db, ADMIN_IDS, SESSIONS_DIR, API_ID, API_HASH, settings_db, BOT_TOKEN
-
-
-
-
+from keyboards import main_keyboard
+from states.states import UploadSession
+from system.system import router, accounts_db, ADMIN_IDS, SESSIONS_DIR
 
 
 # Загрузка сессии
@@ -29,7 +15,7 @@ async def upload_session_start(callback: CallbackQuery, state: FSMContext):
     """
     Обработчик кнопки загрузки сессии
 
-    Запускает процесс загрузки сессии и переходит в состояние ожидания файла
+    Запускает процесс приема сессии в формате Telethon (название.session). Загрузки сессии в папку sessions в дальнейшем и переходит в состояние ожидания файла.
     Отображает инструкции пользователю
 
     :param callback: Объект callback-запроса
