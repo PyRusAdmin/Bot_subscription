@@ -35,7 +35,7 @@ async def upload_session_start(callback: CallbackQuery, state: FSMContext):
     """
     await callback.message.answer(
         "📤 Отправьте файл сессии (.session)\n\n"
-        "Поддерживаются форматы: Telethon, Pyrogram"
+        "Поддерживаются форматы: Telethon"
     )
     await state.set_state(UploadSession.waiting_for_session)
     await callback.answer()
@@ -347,7 +347,7 @@ async def main() -> None:
         dp = Dispatcher(storage=MemoryStorage())
         dp.include_router(router)
 
-        register_check_accounts_handlers()  # Регистрация обработчиков (проверка аккаунтов)
+        register_check_accounts_handlers()  # Регистрация обработчиков (проверка аккаунтовА)
         register_core_handlers()  # Регистрация обработчиков
 
         logger.success("🤖 Бот запущен...")

@@ -7,7 +7,6 @@ from keyboards import main_keyboard
 from system.system import router, accounts_db, ADMIN_IDS, API_ID, API_HASH
 
 
-# Проверка аккаунтов
 @router.callback_query(F.data == "check_accounts")
 async def check_accounts(callback: CallbackQuery) -> None:
     """
