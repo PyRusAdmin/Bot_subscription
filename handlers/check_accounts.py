@@ -37,7 +37,7 @@ async def check_accounts(callback: CallbackQuery):
         await validate_session(path)
 
     await status_msg.edit_text("Проверка завершена!", reply_markup=main_keyboard(True))
-    await callback.answer()
+    # await callback.answer()
 
 
 async def validate_session(path: Path):
@@ -47,8 +47,14 @@ async def validate_session(path: Path):
 
     try:
         await client.connect()
+
+        me = await client.get_me()
+        logger.info(me)
+
+
         if not await client.is_user_authorized():
-            raise AuthKeyUnregisteredError()
+            # raise AuthKeyUnregisteredError()
+            logger.warning("Не авторизован")
 
         me = await client.get_me()
         phone = me.phone or "unknown"
