@@ -51,17 +51,19 @@ async def check_accounts(callback: CallbackQuery) -> None:
     )
 
     # Запускаем проверку аккаунтов
-    stats = await check_user_accounts(user_id, session_files, msg)
+    await check_user_accounts(user_id, session_files, msg)
 
     # Итоговая статистика
-    final_text = (
-        f"\n\n✅ Проверка завершена!\n\n"
-        f"📊 Статистика:\n"
-        f"✅ Активных: {stats['active']}\n"
-        f"❌ Не авторизованных: {stats['unauthorized']}\n"
-        f"💀 Мёртвых: {stats['dead']}\n"
-        f"⚠️ Ошибок: {stats['error']}"
-    )
+    # final_text = (
+    #     f"\n\n✅ Проверка завершена!\n\n"
+    #     f"📊 Статистика:\n"
+    #     f"✅ Активных: {stats['active']}\n"
+    #     f"❌ Не авторизованных: {stats['unauthorized']}\n"
+    #     f"💀 Мёртвых: {stats['dead']}\n"
+    #     f"⚠️ Ошибок: {stats['error']}"
+    # )
+
+    final_text = ("Проверка завершена!")
 
     await msg.edit_text(
         msg.text + final_text,
@@ -88,7 +90,7 @@ def scan_sessions_folder() -> list:
     return session_files
 
 
-async def check_user_accounts(user_id: int, session_files: list, msg) -> dict:
+async def check_user_accounts(user_id: int, session_files: list, msg) -> None:
     """
     Проверяет все аккаунты из списка файлов сессий
 
@@ -104,22 +106,23 @@ async def check_user_accounts(user_id: int, session_files: list, msg) -> dict:
     :param msg: Объект сообщения для отображения прогресса
     :return: Словарь со статистикой
     """
-    stats = {
-        'active': 0,
-        'unauthorized': 0,
-        'dead': 0,
-        'error': 0
-    }
-
-    for idx, session_path in enumerate(session_files, 1):
-        session_name = str(session_path.with_suffix(''))
-        original_filename = session_path.name
+    # stats = {
+    #     'active': 0,
+    #     'unauthorized': 0,
+    #     'dead': 0,
+    #     'error': 0
+    # }
+    logger.info(f"Проверка аккаунта... {session_files}")
+    for session_path in session_files:
+        # session_name = str(session_path.with_suffix(''))
+        # original_filename = session_path.name
+        logger.info(f"Проверка аккаунта... {session_path}")
 
         try:
-            logger.info(f"[{idx}/{len(session_files)}] Проверка: {original_filename}")
+            logger.info(f"[{len(session_files)}] Проверка: {session_path}")
 
             # Создаем клиент Telethon
-            client = TelegramClient(session_name, API_ID, API_HASH)
+            client = TelegramClient(session_path, API_ID, API_HASH)
             await client.connect()
 
             # Получаем информацию об аккаунте
@@ -128,19 +131,19 @@ async def check_user_accounts(user_id: int, session_files: list, msg) -> dict:
 
             # Проверяем авторизацию
             if not await client.is_user_authorized():
-                logger.warning(f"Аккаунт {original_filename} не авторизован")
+                logger.warning(f"Аккаунт {session_path} не авторизован")
 
                 # Сохраняем в БД как неавторизованный
                 await save_account_to_db(
                     user_id=user_id,
                     session_file=str(session_path),
-                    original_filename=original_filename,
+                    original_filename=session_path,
                     status='unauthorized',
                     error_message='Требуется авторизация'
                 )
 
-                stats['unauthorized'] += 1
-                await update_message(msg, f"❌ {original_filename} - не авторизован")
+                # stats['unauthorized'] += 1
+                await update_message(msg, f"❌ {session_path} - не авторизован")
                 await client.disconnect()
                 continue
 
@@ -149,10 +152,10 @@ async def check_user_accounts(user_id: int, session_files: list, msg) -> dict:
 
             # Проверяем, что аккаунт не забанен
             if not me:
-                logger.error(f"Не удалось получить информацию об аккаунте {original_filename}")
-                stats['error'] += 1
+                logger.error(f"Не удалось получить информацию об аккаунте {session_path}")
+                # stats['error'] += 1
                 await move_to_dead(session_path)
-                await update_message(msg, f"💀 {original_filename} - мёртвый аккаунт")
+                await update_message(msg, f"💀 {session_path} - мёртвый аккаунт")
                 await client.disconnect()
                 continue
 
@@ -174,7 +177,7 @@ async def check_user_accounts(user_id: int, session_files: list, msg) -> dict:
             elif new_path != session_path:
                 # Переименовываем файл и связанные файлы
                 rename_session_files(session_path, new_path)
-                logger.info(f"Переименован: {original_filename} -> {new_filename}")
+                logger.info(f"Переименован: {session_path} -> {new_filename}")
 
             # Сохраняем в БД
             await save_account_to_db(
@@ -185,12 +188,12 @@ async def check_user_accounts(user_id: int, session_files: list, msg) -> dict:
                 first_name=first_name,
                 last_name=last_name,
                 session_file=str(new_path),
-                original_filename=original_filename,
+                original_filename=session_path,
                 status='active'
             )
 
-            stats['active'] += 1
-            status_text = f"✅ {original_filename} -> {new_filename}"
+            # stats['active'] += 1
+            status_text = f"✅ {session_path} -> {new_filename}"
             if username:
                 status_text += f" (@{username})"
 
@@ -202,12 +205,12 @@ async def check_user_accounts(user_id: int, session_files: list, msg) -> dict:
         except (AuthKeyUnregisteredError, UserDeactivatedError,
                 UserDeactivatedBanError, PhoneNumberBannedError) as e:
             # Аккаунт забанен или деактивирован
-            logger.error(f"Аккаунт {original_filename} мёртвый: {type(e).__name__}")
+            logger.error(f"Аккаунт {session_path} мёртвый: {type(e).__name__}")
 
             await save_account_to_db(
                 user_id=user_id,
                 session_file=str(session_path),
-                original_filename=original_filename,
+                original_filename=session_path,
                 status='dead',
                 error_message=f'{type(e).__name__}: {str(e)}'
             )
@@ -215,35 +218,35 @@ async def check_user_accounts(user_id: int, session_files: list, msg) -> dict:
             # Перемещаем в dead_sessions
             await move_to_dead(session_path)
 
-            stats['dead'] += 1
-            await update_message(msg, f"💀 {original_filename} - мёртвый ({type(e).__name__})")
+            # stats['dead'] += 1
+            await update_message(msg, f"💀 {session_path} - мёртвый ({type(e).__name__})")
 
-            try:
-                await client.disconnect()
-            except:
-                pass
+            # try:
+            await client.disconnect()
+            # except:
+            #     pass
 
         except Exception as e:
             # Другие ошибки
-            logger.error(f"Ошибка при проверке {original_filename}: {str(e)}")
+            logger.error(f"Ошибка при проверке {session_path}: {str(e)}")
 
             await save_account_to_db(
                 user_id=user_id,
                 session_file=str(session_path),
-                original_filename=original_filename,
+                original_filename=session_path,
                 status='error',
                 error_message=str(e)[:500]
             )
 
-            stats['error'] += 1
-            await update_message(msg, f"⚠️ {original_filename} - ошибка: {str(e)[:30]}")
+            # stats['error'] += 1
+            await update_message(msg, f"⚠️ {session_path} - ошибка: {str(e)[:30]}")
 
-            try:
-                await client.disconnect()
-            except:
-                pass
+            # try:
+            await client.disconnect()
+            # except:
+            #     pass
 
-    return stats
+    # return stats
 
 
 def rename_session_files(old_path: Path, new_path: Path) -> None:
