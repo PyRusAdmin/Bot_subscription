@@ -148,9 +148,11 @@ async def check_accounts(callback: CallbackQuery):
                 acc["status"] = "active"
                 acc["phone"] = me.phone or "unknown"
                 status = f"✅ {acc['filename']} - активен ({me.phone})"
+                logger.info(f"Аккаунт {acc['filename']} активен")
             else:
                 acc["status"] = "unauthorized"
                 status = f"❌ {acc['filename']} - не авторизован"
+                logger.warning(f"Аккаунт {acc['filename']} не авторизован")
 
             await client.disconnect()
             await msg.edit_text(msg.text + f"\n{status}")
