@@ -9,13 +9,14 @@ from system.system import router, accounts_db, ADMIN_IDS, API_ID, API_HASH
 
 # Проверка аккаунтов
 @router.callback_query(F.data == "check_accounts")
-async def check_accounts(callback: CallbackQuery):
+async def check_accounts(callback: CallbackQuery) -> None:
     """
     Обработчик проверки аккаунтов, расположенных в папке sessions.
 
     Проверяет авторизацию каждого аккаунта пользователя.
     Обновляет статусы аккаунтов в базе данных.
     Отображает результаты проверки.
+    Добавляет логирование состояния аккаунтов.
 
     :param callback: Объект callback-запроса
     :return: None
