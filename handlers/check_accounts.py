@@ -6,12 +6,8 @@ from aiogram import F
 from aiogram.types import CallbackQuery
 from loguru import logger
 from telethon import TelegramClient
-from telethon.errors import (
-    AuthKeyUnregisteredError,
-    UserDeactivatedError,
-    UserDeactivatedBanError,
+from telethon.errors import AuthKeyUnregisteredError, UserDeactivatedError, UserDeactivatedBanError, \
     PhoneNumberBannedError
-)
 
 from database.database import Account
 from keyboards import main_keyboard

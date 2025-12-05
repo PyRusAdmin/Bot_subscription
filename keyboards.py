@@ -10,6 +10,7 @@ def main_keyboard(is_admin=False) -> InlineKeyboardMarkup:
     - Просмотр аккаунтов
     - Проверка аккаунтов
     - Подписка на канал
+    - Удаление сессии
 
     Для администраторов добавляет кнопку настроек
 
@@ -20,7 +21,8 @@ def main_keyboard(is_admin=False) -> InlineKeyboardMarkup:
         [InlineKeyboardButton(text="📤 Загрузить сессию", callback_data="upload_session")],
         [InlineKeyboardButton(text="📋 Мои аккаунты", callback_data="my_accounts")],
         [InlineKeyboardButton(text="✅ Проверить аккаунты", callback_data="check_accounts")],
-        [InlineKeyboardButton(text="➕ Подписаться на канал", callback_data="subscribe_channel")]
+        [InlineKeyboardButton(text="➕ Подписаться на канал", callback_data="subscribe_channel")],
+        [InlineKeyboardButton(text="🗑 Удалить сессию", callback_data="delete_session")]
     ]
     if is_admin:
         buttons.append([InlineKeyboardButton(text="⚙️ Настройки (Админ)", callback_data="admin_settings")])
