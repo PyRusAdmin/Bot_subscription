@@ -258,4 +258,5 @@ cython_debug/
 #.idea/
 
 /TODO.md
-/.idea
+/.idea!/sessions/
+/sessions
