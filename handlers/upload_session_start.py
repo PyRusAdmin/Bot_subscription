@@ -73,7 +73,7 @@ async def process_session_upload(message: Message, state: FSMContext) -> None:
     await state.clear()
 
 
-def register_upload_session_handlers() -> None:
+def register_upload_session_start() -> None:
     """
     Регистрирует обработчики команд для загрузки сессий
 

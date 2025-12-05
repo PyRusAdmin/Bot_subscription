@@ -2,9 +2,10 @@ import os
 
 from aiogram import F
 from aiogram.types import Message, CallbackQuery
+from loguru import logger
 
 from keyboards import main_keyboard
-from system.system import router, accounts_db, ADMIN_IDS, SESSIONS_DIR
+from system.system import router, accounts_db, ADMIN_IDS
 
 
 @router.callback_query(F.data == "delete_session")
@@ -39,12 +40,12 @@ async def process_delete_session(message: Message):
     """
     user_id = message.from_user.id
     session_name = message.text.strip()
-    
+
     # Проверяем наличие сессий у пользователя
     if user_id not in accounts_db or not accounts_db[user_id]:
         await message.answer("У вас нет загруженных сессий")
         return
-    
+
     # Ищем сессию по имени
     session_index = None
     session_info = None
@@ -53,21 +54,21 @@ async def process_delete_session(message: Message):
             session_index = i
             session_info = acc
             break
-    
+
     if session_index is None:
         await message.answer(f"Сессия '{session_name}' не найдена. Проверьте правильность написания.")
         return
-    
+
     # Удаляем файл сессии
     session_path = session_info["session"]
     try:
         if os.path.exists(session_path):
             os.remove(session_path)
             logger.info(f"Файл сессии удален: {session_path}")
-        
+
         # Удаляем запись из базы данных
         accounts_db[user_id].pop(session_index)
-        
+
         await message.answer(
             f"✅ Сессия '{session_name}' успешно удалена",
             reply_markup=main_keyboard(user_id in ADMIN_IDS)

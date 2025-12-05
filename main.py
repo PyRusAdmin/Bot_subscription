@@ -12,8 +12,8 @@ from telethon.tl.functions.channels import JoinChannelRequest
 
 from handlers.check_accounts import register_check_accounts_handlers
 from handlers.handlers import register_core_handlers
-from handlers.upload_session_start import register_upload_session_start
 from handlers.delete_session import register_delete_session_handlers
+from handlers.upload_session_start import register_upload_session_start
 from keyboards import main_keyboard, admin_keyboard
 from states.states import AdminSettings
 from system.system import router, accounts_db, ADMIN_IDS, API_ID, API_HASH, settings_db, BOT_TOKEN
