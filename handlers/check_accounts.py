@@ -5,10 +5,14 @@ from pathlib import Path
 from aiogram import F
 from aiogram.types import CallbackQuery
 from loguru import logger
-from peewee import SqliteDatabase, Model, IntegerField, CharField, TextField, BigIntegerField, DateTimeField
+from peewee import *
 from telethon import TelegramClient
-from telethon.errors import AuthKeyUnregisteredError, UserDeactivatedError, UserDeactivatedBanError, \
+from telethon.errors import (
+    AuthKeyUnregisteredError,
+    UserDeactivatedError,
+    UserDeactivatedBanError,
     PhoneNumberBannedError
+)
 
 from keyboards import main_keyboard
 from system.system import router, ADMIN_IDS, API_ID, API_HASH
@@ -25,7 +29,6 @@ db = SqliteDatabase('accounts.db')
 
 class BaseModel(Model):
     """Базовая модель"""
-
     class Meta:
         database = db
 
@@ -158,6 +161,10 @@ async def check_user_accounts(user_id: int, session_files: list, msg) -> dict:
             # Создаем клиент Telethon
             client = TelegramClient(session_name, API_ID, API_HASH)
             await client.connect()
+
+            # Получаем информацию об аккаунте
+            me = await client.get_me()
+            logger.info(f"Данные аккаунта {me}")
 
             # Проверяем авторизацию
             if not await client.is_user_authorized():
