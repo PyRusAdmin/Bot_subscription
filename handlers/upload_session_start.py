@@ -4,7 +4,7 @@ from aiogram import F
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, CallbackQuery
 
-from keyboards import main_keyboard
+from keyboards.keyboards import main_keyboard
 from states.states import UploadSession
 from system.system import router, accounts_db, ADMIN_IDS, SESSIONS_DIR
 

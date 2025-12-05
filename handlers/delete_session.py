@@ -5,7 +5,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, CallbackQuery
 from loguru import logger
 
-from keyboards import main_keyboard
+from keyboards.keyboards import main_keyboard
 from states.states import DeleteSession
 from system.system import router, ADMIN_IDS
 

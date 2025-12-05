@@ -10,7 +10,7 @@ from telethon.errors import AuthKeyUnregisteredError, UserDeactivatedError, User
     PhoneNumberBannedError
 
 from database.database import Account
-from keyboards import main_keyboard
+from keyboards.keyboards import main_keyboard
 from system.system import router, ADMIN_IDS, API_ID, API_HASH
 
 # Настройки путей

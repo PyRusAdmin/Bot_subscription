@@ -3,7 +3,7 @@ from aiogram.filters import Command
 from aiogram.types import FSInputFile
 from aiogram.types import Message
 
-from keyboards import main_keyboard
+from keyboards.keyboards import main_keyboard
 from system.system import router, accounts_db, ADMIN_IDS
 
 
