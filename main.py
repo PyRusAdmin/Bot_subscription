@@ -285,10 +285,10 @@ async def main() -> None:
         dp = Dispatcher(storage=MemoryStorage())
         dp.include_router(router)
 
-        register_upload_session_start()  # Регистрация обработчиков (загрузка сессий)
-        register_check_accounts_handlers()  # Регистрация обработчиков (проверка аккаунтов)
-        register_core_handlers()  # Регистрация обработчиков
-        register_delete_session_handlers()  # Регистрация обработчиков (удаление сессий)
+        register_upload_session_start()
+        register_check_accounts_handlers()
+        register_core_handlers()
+        register_delete_session_handlers()
 
         logger.success("🤖 Бот запущен...")
         await dp.start_polling(bot)

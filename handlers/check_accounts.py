@@ -54,22 +54,11 @@ async def check_accounts(callback: CallbackQuery) -> None:
     await check_user_accounts(user_id, session_files, msg)
 
     # Итоговая статистика
-    # final_text = (
-    #     f"\n\n✅ Проверка завершена!\n\n"
-    #     f"📊 Статистика:\n"
-    #     f"✅ Активных: {stats['active']}\n"
-    #     f"❌ Не авторизованных: {stats['unauthorized']}\n"
-    #     f"💀 Мёртвых: {stats['dead']}\n"
-    #     f"⚠️ Ошибок: {stats['error']}"
-    # )
-
-    final_text = ("Проверка завершена!")
-
+    # final_text = ("Проверка завершена!")
     await msg.edit_text(
-        msg.text + final_text,
+        msg.text + "Проверка завершена!",
         reply_markup=main_keyboard(user_id in ADMIN_IDS)
     )
-
     await callback.answer()
 
 
@@ -106,16 +95,9 @@ async def check_user_accounts(user_id: int, session_files: list, msg) -> None:
     :param msg: Объект сообщения для отображения прогресса
     :return: Словарь со статистикой
     """
-    # stats = {
-    #     'active': 0,
-    #     'unauthorized': 0,
-    #     'dead': 0,
-    #     'error': 0
-    # }
     logger.info(f"Проверка аккаунта... {session_files}")
     for session_path in session_files:
-        # session_name = str(session_path.with_suffix(''))
-        # original_filename = session_path.name
+
         logger.info(f"Проверка аккаунта... {session_path}")
 
         try:
@@ -142,7 +124,6 @@ async def check_user_accounts(user_id: int, session_files: list, msg) -> None:
                     error_message='Требуется авторизация'
                 )
 
-                # stats['unauthorized'] += 1
                 await update_message(msg, f"❌ {session_path} - не авторизован")
                 await client.disconnect()
                 continue
@@ -153,7 +134,7 @@ async def check_user_accounts(user_id: int, session_files: list, msg) -> None:
             # Проверяем, что аккаунт не забанен
             if not me:
                 logger.error(f"Не удалось получить информацию об аккаунте {session_path}")
-                # stats['error'] += 1
+
                 await move_to_dead(session_path)
                 await update_message(msg, f"💀 {session_path} - мёртвый аккаунт")
                 await client.disconnect()
@@ -192,7 +173,6 @@ async def check_user_accounts(user_id: int, session_files: list, msg) -> None:
                 status='active'
             )
 
-            # stats['active'] += 1
             status_text = f"✅ {session_path} -> {new_filename}"
             if username:
                 status_text += f" (@{username})"
@@ -218,7 +198,6 @@ async def check_user_accounts(user_id: int, session_files: list, msg) -> None:
             # Перемещаем в dead_sessions
             await move_to_dead(session_path)
 
-            # stats['dead'] += 1
             await update_message(msg, f"💀 {session_path} - мёртвый ({type(e).__name__})")
 
             # try:
@@ -238,15 +217,12 @@ async def check_user_accounts(user_id: int, session_files: list, msg) -> None:
                 error_message=str(e)[:500]
             )
 
-            # stats['error'] += 1
             await update_message(msg, f"⚠️ {session_path} - ошибка: {str(e)[:30]}")
 
             # try:
             await client.disconnect()
             # except:
             #     pass
-
-    # return stats
 
 
 def rename_session_files(old_path: Path, new_path: Path) -> None:

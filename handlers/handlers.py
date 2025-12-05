@@ -64,5 +64,5 @@ def register_core_handlers() -> None:
 
     :return: None
     """
-    router.message.register(send_log)  # Отправляет логи бота по запросу администратора, прописанного в .env файле
-    router.message.register(cmd_start)  # Отправляет основное меню бота по команде /start
+    router.message.register(send_log)
+    router.message.register(cmd_start)
