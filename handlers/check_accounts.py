@@ -1,5 +1,9 @@
 from pathlib import Path
 
+# Директория для хранения сессий Telethon
+SESSIONS_DIR = Path("sessions")
+SESSIONS_DIR.mkdir(exist_ok=True)
+
 from aiogram import F
 from aiogram.types import CallbackQuery
 from loguru import logger
@@ -20,7 +24,18 @@ SESSIONS_DIR.mkdir(exist_ok=True)
 
 @router.callback_query(F.data == "check_accounts")
 async def check_accounts(callback: CallbackQuery):
-    """Проверка всех .session файлов"""
+    """
+    Обработчик проверки всех .session файлов
+    
+    Проверяет доступ к аккаунтам Telegram через Telethon клиент.
+    Доступно только для администраторов.
+    
+    Args:
+        callback (CallbackQuery): Объект callback-запроса от пользователя
+    
+    Returns:
+        None
+    """
     if callback.from_user.id not in ADMIN_IDS:
         return await callback.answer("Доступ запрещён", show_alert=True)
 
@@ -40,7 +55,21 @@ async def check_accounts(callback: CallbackQuery):
 
 
 async def validate_session(path: Path):
-    """Проверка одной .session"""
+    """
+    Проверяет валидность одной сессии Telegram.
+    
+    Подключается к аккаунту через Telethon и проверяет его состояние.
+    Логирует результат проверки (живой/мёртвый/ошибка).
+    
+    Args:
+        path (Path): Путь к файлу сессии .session
+    
+    Returns:
+        None
+    
+    Raises:
+        Exception: При ошибках подключения или других неожиданных проблемах
+    """
     logger.info(f"Проверка: {path.name}")
     client = TelegramClient(str(path), API_ID, API_HASH)
 
@@ -73,4 +102,9 @@ async def validate_session(path: Path):
 
 
 def register_check_accounts_handlers():
+    """
+    Регистрирует обработчики команд проверки аккаунтов.
+    
+    Добавляет callback-обработчик для проверки сессий Telegram.
+    """
     router.callback_query.register(check_accounts)
