@@ -57,16 +57,17 @@ async def validate_session(path: Path):
         # if not await client.is_user_authorized():
         # raise AuthKeyUnregisteredError()
         # logger.warning("Не авторизован")
+        else:
+            # me = await client.get_me()
+            logger.info(me)
+            phone = me.phone or "unknown"
+            # new_path = SESSIONS_DIR / f"{me.id}_{phone}.session"
 
-        me = await client.get_me()
-        phone = me.phone or "unknown"
-        new_path = SESSIONS_DIR / f"{me.id}_{phone}.session"
+            # if path != new_path:
+            #     new_path.unlink(missing_ok=True)
+            #     path.rename(new_path)
 
-        if path != new_path:
-            new_path.unlink(missing_ok=True)
-            path.rename(new_path)
-
-        logger.success(f"Живой: +{phone} ({me.id})")
+            logger.success(f"Живой: +{phone} ({me.id})")
 
     except (AuthKeyUnregisteredError,
             UserDeactivatedError,
