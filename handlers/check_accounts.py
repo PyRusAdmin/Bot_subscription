@@ -51,10 +51,12 @@ async def validate_session(path: Path):
         me = await client.get_me()
         logger.info(me)
 
+        if me is None:
+            logger.warning(f"Аккаунт {path.name} не авторизован")
 
-        if not await client.is_user_authorized():
-            # raise AuthKeyUnregisteredError()
-            logger.warning("Не авторизован")
+        # if not await client.is_user_authorized():
+        # raise AuthKeyUnregisteredError()
+        # logger.warning("Не авторизован")
 
         me = await client.get_me()
         phone = me.phone or "unknown"
