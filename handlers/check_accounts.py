@@ -1,9 +1,5 @@
 from pathlib import Path
 
-# Директория для хранения сессий Telethon
-SESSIONS_DIR = Path("sessions")
-SESSIONS_DIR.mkdir(exist_ok=True)
-
 from aiogram import F
 from aiogram.types import CallbackQuery
 from loguru import logger
@@ -12,10 +8,7 @@ from telethon.errors import SessionPasswordNeededError, AuthKeyUnregisteredError
     PhoneNumberBannedError
 
 from keyboards.keyboards import main_keyboard
-from system.system import router, ADMIN_IDS, API_ID, API_HASH
-
-SESSIONS_DIR = Path("sessions")
-SESSIONS_DIR.mkdir(exist_ok=True)
+from system.system import router, ADMIN_IDS, API_ID, API_HASH, SESSIONS_DIR
 
 
 @router.callback_query(F.data == "check_accounts")

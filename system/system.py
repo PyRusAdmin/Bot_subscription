@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 
 import dotenv
 from aiogram import Router
@@ -23,3 +24,7 @@ os.makedirs(SESSIONS_DIR, exist_ok=True)
 # Хранилище данных
 accounts_db = {}
 settings_db = {"target_channel": None, "interval": 60}
+
+# Директория для хранения сессий Telethon
+SESSIONS_DIR = Path("sessions")
+SESSIONS_DIR.mkdir(exist_ok=True)
