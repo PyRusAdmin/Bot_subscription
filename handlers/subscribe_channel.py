@@ -1,4 +1,6 @@
 import asyncio
+import json
+from pathlib import Path
 
 from aiogram import F
 from aiogram.types import CallbackQuery
@@ -8,7 +10,27 @@ from telethon.errors import FloodWaitError, ChannelPrivateError, InviteHashExpir
 from telethon.tl.functions.channels import JoinChannelRequest
 
 from keyboards.keyboards import main_keyboard
-from system.system import router, ADMIN_IDS, API_ID, API_HASH, settings_db, SESSIONS_DIR
+from system.system import router, ADMIN_IDS, API_ID, API_HASH, SESSIONS_DIR
+
+# Путь к JSON файлу с настройками
+SETTINGS_FILE = Path("data/settings.json")
+
+
+def load_settings():
+    """
+    Загружает настройки из JSON файла
+
+    :return: Словарь с настройками или пустой словарь
+    """
+    if not SETTINGS_FILE.exists():
+        return {}
+
+    try:
+        with open(SETTINGS_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception as e:
+        logger.error(f"Ошибка загрузки настроек: {e}")
+        return {}
 
 
 @router.callback_query(F.data == "subscribe_channel")
@@ -25,7 +47,7 @@ async def subscribe_channel(callback: CallbackQuery):
     """
     user_id = callback.from_user.id
 
-    # Читаем все .session файлы из папки (как в check_accounts)
+    # Читаем все .session файлы из папки
     session_files = list(SESSIONS_DIR.glob("*.session"))
 
     if not session_files:
@@ -33,13 +55,16 @@ async def subscribe_channel(callback: CallbackQuery):
         await callback.answer()
         return
 
-    if not settings_db.get("target_channel"):
+    # Загружаем настройки из JSON
+    settings = load_settings()
+
+    target_channel = settings.get("target_channel")
+    if not target_channel:
         await callback.message.answer("❌ Администратор не установил целевой канал")
         await callback.answer()
         return
 
-    target_channel = settings_db["target_channel"]
-    interval = settings_db.get("interval", 5)
+    interval = settings.get("interval", 5)  # По умолчанию 5 секунд
 
     msg = await callback.message.answer(
         f"🔄 Начинаю подписку на: {target_channel}\n"

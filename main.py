@@ -13,6 +13,7 @@ from telethon.tl.functions.channels import JoinChannelRequest
 from handlers.check_accounts import register_check_accounts_handlers
 from handlers.handlers import register_core_handlers
 from handlers.delete_session import register_delete_session_handlers
+from handlers.set_channel import register_handlers_set_channel
 from handlers.subscribe_channel import register_subscribe_channel
 from handlers.upload_session_start import register_upload_session_start
 from keyboards.keyboards import main_keyboard, admin_keyboard
@@ -78,51 +79,6 @@ async def admin_settings(callback: CallbackQuery):
 
     await callback.message.answer(text, reply_markup=admin_keyboard())
     await callback.answer()
-
-
-@router.callback_query(F.data == "set_channel")
-async def set_channel_start(callback: CallbackQuery, state: FSMContext):
-    """
-    Обработчик установки целевого канала
-
-    Запускает процесс установки канала для подписки
-    Переходит в состояние ожидания ввода канала
-    Доступно только для администраторов
-
-    :param callback: Объект callback-запроса
-    :param state: Контекст состояния FSM
-    :return: None
-    """
-    if callback.from_user.id not in ADMIN_IDS:
-        await callback.answer("❌ Доступ запрещен", show_alert=True)
-        return
-
-    await callback.message.answer(
-        "Отправьте username или ссылку на канал\n"
-        "Например: @channel или https://t.me/channel"
-    )
-    await state.set_state(AdminSettings.waiting_for_channel)
-    await callback.answer()
-
-
-@router.message(AdminSettings.waiting_for_channel)
-async def set_channel_process(message: Message, state: FSMContext):
-    """
-    Обработчик установки канала
-
-    Сохраняет введенный канал в настройки
-    Подтверждает успешную установку
-
-    :param message: Объект сообщения с названием канала
-    :param state: Контекст состояния FSM
-    :return: None
-    """
-    settings_db["target_channel"] = message.text.strip()
-    await message.answer(
-        f"✅ Канал установлен: {settings_db['target_channel']}",
-        reply_markup=admin_keyboard()
-    )
-    await state.clear()
 
 
 @router.callback_query(F.data == "set_interval")
@@ -218,6 +174,8 @@ async def main() -> None:
         register_delete_session_handlers()
 
         register_subscribe_channel()
+
+        register_handlers_set_channel()
 
         logger.success("🤖 Бот запущен...")
         await dp.start_polling(bot)
