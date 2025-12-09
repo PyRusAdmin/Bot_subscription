@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import asyncio
 import json
+import re
 from pathlib import Path
 
 from aiogram import F
@@ -39,6 +40,42 @@ def save_settings(settings: dict):
         logger.error(f"Ошибка сохранения настроек: {e}")
 
 
+def extract_channel_identifier(channel_input: str) -> str:
+    """
+    Извлекает идентификатор канала из различных форматов ввода
+
+    Поддерживаемые форматы:
+    - https://t.me/channel_name
+    - t.me/channel_name
+    - @channel_name
+    - channel_name
+    - https://t.me/joinchat/XXXXX (invite links)
+    - https://t.me/+XXXXX (new invite links)
+
+    :param channel_input: Строка с каналом в любом формате
+    :return: Очищенный идентификатор канала
+    """
+    channel_input = channel_input.strip()
+
+    # Проверка на invite link (joinchat или +)
+    if 'joinchat/' in channel_input or '/+' in channel_input:
+        # Возвращаем всю ссылку для invite links
+        return channel_input
+
+    # Извлекаем username из URL
+    # Паттерн: https://t.me/username или t.me/username
+    match = re.search(r't\.me/([a-zA-Z0-9_]+)', channel_input)
+    if match:
+        return match.group(1)
+
+    # Если начинается с @, убираем его
+    if channel_input.startswith('@'):
+        return channel_input[1:]
+
+    # Иначе возвращаем как есть
+    return channel_input
+
+
 @router.callback_query(F.data == "subscribe_channel")
 async def subscribe_channel(callback: CallbackQuery):
     """
@@ -70,6 +107,9 @@ async def subscribe_channel(callback: CallbackQuery):
         await callback.answer()
         return
 
+    # Извлекаем чистый идентификатор канала
+    channel_identifier = extract_channel_identifier(target_channel)
+
     interval = settings.get("interval", 5)  # По умолчанию 5 секунд
 
     msg = await callback.message.answer(
@@ -92,7 +132,8 @@ async def subscribe_channel(callback: CallbackQuery):
             if not await client.is_user_authorized():
                 raise Exception("Не авторизован")
 
-            await client(JoinChannelRequest(target_channel))
+            # Используем очищенный идентификатор канала
+            await client(JoinChannelRequest(channel_identifier))
             success += 1
             logger.success(f"Подписан: {session_name}")
             await msg.edit_text(
