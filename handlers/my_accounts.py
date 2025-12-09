@@ -1,41 +1,45 @@
 # -*- coding: utf-8 -*-
+import io
+
 from aiogram import F
-from aiogram.types import CallbackQuery
+from aiogram.types import CallbackQuery, BufferedInputFile
 
 from keyboards.keyboards import main_keyboard
-from system.system import router, accounts_db, ADMIN_IDS
+from system.system import router, ADMIN_IDS, SESSIONS_DIR
 
 
-# Просмотр аккаунтов
 @router.callback_query(F.data == "my_accounts")
-async def show_accounts(callback: CallbackQuery):
+async def send_session_files_list(callback: CallbackQuery):
     """
-    Обработчик кнопки просмотра аккаунтов
-
-    Отображает список всех загруженных пользователем аккаунтов.
-    Показывает статус, телефон и имя файла для каждого аккаунта
-
-    :param callback: Объект callback-запроса
-    :return: None
+    Отправляет список всех .session файлов в виде TXT-файла.
+    Без подключения к Telegram — только имена файлов.
+    Доступно только администраторам.
     """
-    user_id = callback.from_user.id
-    accounts = accounts_db.get(user_id, [])
+    if callback.from_user.id not in ADMIN_IDS:
+        return await callback.answer("Доступ запрещён", show_alert=True)
 
-    if not accounts:
-        await callback.message.answer("У вас нет загруженных аккаунтов")
-        await callback.answer()
-        return
+    session_files = sorted(SESSIONS_DIR.glob("*.session"))
+    if not session_files:
+        await callback.message.answer("Нет сессий в папке sessions/")
+        return await callback.answer()
 
-    text = "📋 Ваши аккаунты:\n\n"
-    for idx, acc in enumerate(accounts, 1):
-        status_emoji = "✅" if acc["status"] == "active" else "❓" if acc["status"] == "not_checked" else "❌"
-        text += f"{idx}. {status_emoji} {acc['filename']}\n"
-        text += f"   Телефон: {acc['phone']}\n"
-        text += f"   Статус: {acc['status']}\n\n"
+    # Формируем текст: по одному имени файла на строку
+    lines = ["📋 Список .session файлов:\n"]
+    for path in session_files:
+        lines.append(path.name)
 
-    await callback.message.answer(text, reply_markup=main_keyboard(user_id in ADMIN_IDS))
+    file_content = "\n".join(lines).encode("utf-8")
+    bio = io.BytesIO(file_content)
+    bio.name = "список_сессий.txt"
+
+    document = BufferedInputFile(bio.getvalue(), filename="список_сессий.txt")
+    await callback.message.answer_document(
+        document=document,
+        caption="📁 Вот список всех ваших .session файлов.",
+        reply_markup=main_keyboard(True)
+    )
     await callback.answer()
 
 
 def register_show_accounts():
-    router.callback_query.register(show_accounts)
+    router.callback_query.register(send_session_files_list)
