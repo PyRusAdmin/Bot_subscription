@@ -130,8 +130,13 @@ async def subscribe_channel(callback: CallbackQuery):
     await callback.answer()
 
 
-def register_subscribe_channel():
+def register_subscribe_channel() -> None:
     """
-    Регистрирует обработчик подписки на канал.
+    Регистрирует обработчики команд для подписки на канал
+
+    Подключает обработчик команды subscribe_channel к роутеру бота.
+    Вызывается при инициализации бота в основном файле.
+
+    :return: None
     """
     router.callback_query.register(subscribe_channel)
