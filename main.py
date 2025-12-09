@@ -1,54 +1,26 @@
 # -*- coding: utf-8 -*-
 import asyncio
 import logging
+import sys
+
 from aiogram import Bot, Dispatcher, F
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.types import CallbackQuery
 from aiogram.utils.token import TokenValidationError
 from loguru import logger
-import sys
+
 from handlers.check_accounts import register_check_accounts_handlers
 from handlers.delete_session import register_delete_session_handlers
 from handlers.handlers import register_core_handlers
+from handlers.my_accounts import register_show_accounts
 from handlers.set_channel import register_handlers_set_channel
 from handlers.set_interval import set_interval_register_handler
 from handlers.subscribe_channel import register_subscribe_channel
 from handlers.upload_session_start import register_upload_session_start
 from keyboards.keyboards import main_keyboard, admin_keyboard
-from system.system import router, accounts_db, ADMIN_IDS, API_ID, API_HASH, settings_db, BOT_TOKEN
+from system.system import router, ADMIN_IDS, API_ID, API_HASH, settings_db, BOT_TOKEN
 
 logger.add("log/log.log", rotation="10 MB")
-
-
-# Просмотр аккаунтов
-@router.callback_query(F.data == "my_accounts")
-async def show_accounts(callback: CallbackQuery):
-    """
-    Обработчик кнопки просмотра аккаунтов
-
-    Отображает список всех загруженных пользователем аккаунтов.
-    Показывает статус, телефон и имя файла для каждого аккаунта
-
-    :param callback: Объект callback-запроса
-    :return: None
-    """
-    user_id = callback.from_user.id
-    accounts = accounts_db.get(user_id, [])
-
-    if not accounts:
-        await callback.message.answer("У вас нет загруженных аккаунтов")
-        await callback.answer()
-        return
-
-    text = "📋 Ваши аккаунты:\n\n"
-    for idx, acc in enumerate(accounts, 1):
-        status_emoji = "✅" if acc["status"] == "active" else "❓" if acc["status"] == "not_checked" else "❌"
-        text += f"{idx}. {status_emoji} {acc['filename']}\n"
-        text += f"   Телефон: {acc['phone']}\n"
-        text += f"   Статус: {acc['status']}\n\n"
-
-    await callback.message.answer(text, reply_markup=main_keyboard(user_id in ADMIN_IDS))
-    await callback.answer()
 
 
 # Админ настройки
@@ -126,6 +98,8 @@ async def main() -> None:
         register_handlers_set_channel()
 
         set_interval_register_handler()
+
+        register_show_accounts()
 
         logger.success("🤖 Бот запущен...")
         await dp.start_polling(bot)
