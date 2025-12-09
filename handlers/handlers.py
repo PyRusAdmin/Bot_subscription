@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # Конфигурация
 from aiogram.filters import Command
 from aiogram.types import FSInputFile

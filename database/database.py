@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from datetime import datetime
 
 from peewee import SqliteDatabase, Model, IntegerField, CharField, BigIntegerField, TextField, DateTimeField

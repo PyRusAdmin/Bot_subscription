@@ -1,11 +1,12 @@
+# -*- coding: utf-8 -*-
 import asyncio
-
+import logging
 from aiogram import Bot, Dispatcher, F
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.types import CallbackQuery
 from aiogram.utils.token import TokenValidationError
 from loguru import logger
-
+import sys
 from handlers.check_accounts import register_check_accounts_handlers
 from handlers.delete_session import register_delete_session_handlers
 from handlers.handlers import register_core_handlers
@@ -133,4 +134,5 @@ async def main() -> None:
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO, stream=sys.stdout)
     asyncio.run(main())
