@@ -8,7 +8,13 @@ from aiogram import F
 from aiogram.types import CallbackQuery
 from loguru import logger
 from telethon import TelegramClient
-from telethon.errors import FloodWaitError, ChannelPrivateError, InviteHashExpiredError
+from telethon.errors import (
+    FloodWaitError,
+    ChannelPrivateError,
+    InviteHashExpiredError,
+    UsernameNotOccupiedError,
+    UsernameInvalidError
+)
 from telethon.tl.functions.channels import JoinChannelRequest
 
 from keyboards.keyboards import main_keyboard
@@ -114,12 +120,14 @@ async def subscribe_channel(callback: CallbackQuery):
 
     msg = await callback.message.answer(
         f"🔄 Начинаю подписку на: {target_channel}\n"
+        f"Идентификатор: {channel_identifier}\n"
         f"Интервал: {interval} сек\n"
         f"Аккаунтов: {len(session_files)}"
     )
 
     success = 0
     failed = 0
+    channel_not_found = False
 
     for session_path in session_files:
         session_name = session_path.stem  # имя файла без .session
@@ -129,8 +137,8 @@ async def subscribe_channel(callback: CallbackQuery):
         try:
             await client.connect()
 
-            if not await client.is_user_authorized():
-                raise Exception("Не авторизован")
+            # if not await client.is_user_authorized():
+            #     raise Exception("Не авторизован")
 
             # Используем очищенный идентификатор канала
             await client(JoinChannelRequest(channel_identifier))
@@ -155,6 +163,16 @@ async def subscribe_channel(callback: CallbackQuery):
             )
             failed += 1
 
+        except (UsernameNotOccupiedError, UsernameInvalidError) as e:
+            logger.error(f"Неверный username канала {session_name}: {e}")
+            await msg.edit_text(
+                msg.text + f"\n❌ {session_name} - канал не найден (неверный username)"
+            )
+            failed += 1
+            channel_not_found = True
+            # Прерываем цикл, т.к. канал не существует
+            break
+
         # except Exception as e:
         #     failed += 1
         #     error_msg = str(e)[:50].replace("\n", " ")
@@ -170,8 +188,21 @@ async def subscribe_channel(callback: CallbackQuery):
         # Ждём интервал перед следующим аккаунтом
         await asyncio.sleep(interval)
 
+    # Формируем финальное сообщение
+    final_text = msg.text + f"\n\n✅ Готово!\nУспешно: {success}\nОшибок: {failed}"
+
+    if channel_not_found:
+        final_text += (
+            f"\n\n⚠️ ВНИМАНИЕ: Канал '{channel_identifier}' не найден!\n"
+            f"Проверьте правильность username канала.\n"
+            f"Возможно, канал:\n"
+            f"• Не существует\n"
+            f"• Имеет другое имя\n"
+            f"• Является приватным (используйте invite-ссылку)"
+        )
+
     await msg.edit_text(
-        msg.text + f"\n\n✅ Готово!\nУспешно: {success}\nОшибок: {failed}",
+        final_text,
         reply_markup=main_keyboard(user_id in ADMIN_IDS)
     )
     await callback.answer()
