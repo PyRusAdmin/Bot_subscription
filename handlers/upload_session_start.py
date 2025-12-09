@@ -7,7 +7,7 @@ from aiogram.types import Message, CallbackQuery
 
 from keyboards.keyboards import main_keyboard
 from states.states import UploadSession
-from system.system import router, accounts_db, ADMIN_IDS, SESSIONS_DIR
+from system.system import router, ADMIN_IDS, SESSIONS_DIR
 
 
 # Загрузка сессии
@@ -53,18 +53,18 @@ async def process_session_upload(message: Message, state: FSMContext) -> None:
 
     # Скачиваем файл
     file = await message.bot.download(document)
-    session_path = os.path.join(SESSIONS_DIR, f"{user_id}_{document.file_name}")
+    session_path = os.path.join(SESSIONS_DIR, f"{document.file_name}")
 
     with open(session_path, 'wb') as f:
         f.write(file.read())
 
     # Сохраняем в базу
-    accounts_db[user_id].append({
-        "session": session_path,
-        "filename": document.file_name,
-        "status": "not_checked",
-        "phone": "unknown"
-    })
+    # accounts_db[user_id].append({
+    #     "session": session_path,
+    #     "filename": document.file_name,
+    #     "status": "not_checked",
+    #     "phone": "unknown"
+    # })
 
     await message.answer(
         f"✅ Сессия загружена: {document.file_name}\n\n"
