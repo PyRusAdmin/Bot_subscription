@@ -5,8 +5,8 @@ from aiogram import F
 from aiogram.types import CallbackQuery
 from loguru import logger
 from telethon import TelegramClient
-from telethon.errors import SessionPasswordNeededError, AuthKeyUnregisteredError, UserDeactivatedError, \
-    PhoneNumberBannedError
+from telethon.errors import (SessionPasswordNeededError, AuthKeyUnregisteredError, UserDeactivatedError,
+                             PhoneNumberBannedError)
 
 from keyboards.keyboards import main_keyboard
 from system.system import router, ADMIN_IDS, API_ID, API_HASH, SESSIONS_DIR
