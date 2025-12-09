@@ -1,7 +1,4 @@
 # -*- coding: utf-8 -*-
-import json
-from pathlib import Path
-
 from aiogram import F
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, CallbackQuery

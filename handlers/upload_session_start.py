@@ -58,14 +58,6 @@ async def process_session_upload(message: Message, state: FSMContext) -> None:
     with open(session_path, 'wb') as f:
         f.write(file.read())
 
-    # Сохраняем в базу
-    # accounts_db[user_id].append({
-    #     "session": session_path,
-    #     "filename": document.file_name,
-    #     "status": "not_checked",
-    #     "phone": "unknown"
-    # })
-
     await message.answer(
         f"✅ Сессия загружена: {document.file_name}\n\n"
         f"Используйте 'Проверить аккаунты' для проверки",

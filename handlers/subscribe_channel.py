@@ -108,9 +108,6 @@ async def subscribe_channel(callback: CallbackQuery):
         try:
             await client.connect()
 
-            # if not await client.is_user_authorized():
-            #     raise Exception("Не авторизован")
-
             # Используем очищенный идентификатор канала
             await client(JoinChannelRequest(channel_identifier))
 
@@ -154,14 +151,6 @@ async def subscribe_channel(callback: CallbackQuery):
             channel_not_found = True
             # Прерываем цикл, т.к. канал не существует
             break
-
-        # except Exception as e:
-        #     failed += 1
-        #     error_msg = str(e)[:50].replace("\n", " ")
-        #     logger.error(f"Ошибка {session_name}: {error_msg}")
-        #     await msg.edit_text(
-        #         msg.text + f"\n❌ {session_name} - ошибка: {error_msg}"
-        #     )
 
         except Exception as e:
             logger.exception(e)
