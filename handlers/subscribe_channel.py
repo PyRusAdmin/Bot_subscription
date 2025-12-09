@@ -155,13 +155,13 @@ async def subscribe_channel(callback: CallbackQuery):
             )
             failed += 1
 
-        except Exception as e:
-            failed += 1
-            error_msg = str(e)[:50].replace("\n", " ")
-            logger.error(f"Ошибка {session_name}: {error_msg}")
-            await msg.edit_text(
-                msg.text + f"\n❌ {session_name} - ошибка: {error_msg}"
-            )
+        # except Exception as e:
+        #     failed += 1
+        #     error_msg = str(e)[:50].replace("\n", " ")
+        #     logger.error(f"Ошибка {session_name}: {error_msg}")
+        #     await msg.edit_text(
+        #         msg.text + f"\n❌ {session_name} - ошибка: {error_msg}"
+        #     )
 
         finally:
             if client.is_connected():
