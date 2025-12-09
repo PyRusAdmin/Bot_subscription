@@ -10,32 +10,7 @@ from loguru import logger
 from keyboards.keyboards import admin_keyboard
 from states.states import AdminSettings
 from system.system import router, ADMIN_IDS
-
-# Путь к JSON файлу с настройками — должен совпадать с другими модулями!
-SETTINGS_FILE = Path("data/settings.json")
-
-
-def load_settings():
-    if not SETTINGS_FILE.exists():
-        SETTINGS_FILE.parent.mkdir(parents=True, exist_ok=True)
-        return {}
-
-    try:
-        with open(SETTINGS_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
-    except Exception as e:
-        logger.error(f"Ошибка загрузки настроек: {e}")
-        return {}
-
-
-def save_settings(settings: dict):
-    try:
-        SETTINGS_FILE.parent.mkdir(parents=True, exist_ok=True)
-        with open(SETTINGS_FILE, "w", encoding="utf-8") as f:
-            json.dump(settings, f, ensure_ascii=False, indent=2)
-        logger.info(f"Настройки сохранены: {settings}")
-    except Exception as e:
-        logger.error(f"Ошибка сохранения настроек: {e}")
+from utilit.utilit import load_settings, save_settings
 
 
 @router.callback_query(F.data == "set_interval")

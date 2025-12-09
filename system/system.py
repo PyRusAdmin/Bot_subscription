@@ -29,3 +29,12 @@ settings_db = {"target_channel": None, "interval": 60}
 # Директория для хранения сессий Telethon
 SESSIONS_DIR = Path("sessions")
 SESSIONS_DIR.mkdir(exist_ok=True)
+
+# Путь к JSON файлу с настройками
+SETTINGS_FILE = Path("data/settings.json")
+
+# Путь к JSON файлу с настройками
+SETTINGS_FILE = Path("data/settings.json")
+
+# Путь к JSON файлу с настройками — должен совпадать с другими модулями!
+SETTINGS_FILE = Path("data/settings.json")

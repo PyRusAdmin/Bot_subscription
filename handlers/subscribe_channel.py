@@ -1,49 +1,18 @@
 # -*- coding: utf-8 -*-
 import asyncio
-import json
 import re
-from pathlib import Path
 
 from aiogram import F
 from aiogram.types import CallbackQuery
 from loguru import logger
 from telethon import TelegramClient
-from telethon.errors import (
-    FloodWaitError,
-    ChannelPrivateError,
-    InviteHashExpiredError,
-    UsernameNotOccupiedError,
-    UsernameInvalidError
-)
+from telethon.errors import (FloodWaitError, ChannelPrivateError, InviteHashExpiredError, UsernameNotOccupiedError,
+                             UsernameInvalidError)
 from telethon.tl.functions.channels import JoinChannelRequest
 
 from keyboards.keyboards import main_keyboard
 from system.system import router, ADMIN_IDS, API_ID, API_HASH, SESSIONS_DIR
-
-# Путь к JSON файлу с настройками
-SETTINGS_FILE = Path("data/settings.json")
-
-
-def load_settings():
-    if not SETTINGS_FILE.exists():
-        SETTINGS_FILE.parent.mkdir(parents=True, exist_ok=True)
-        return {}
-    try:
-        with open(SETTINGS_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
-    except Exception as e:
-        logger.error(f"Ошибка загрузки настроек: {e}")
-        return {}
-
-
-def save_settings(settings: dict):
-    try:
-        SETTINGS_FILE.parent.mkdir(parents=True, exist_ok=True)
-        with open(SETTINGS_FILE, "w", encoding="utf-8") as f:
-            json.dump(settings, f, ensure_ascii=False, indent=2)
-        logger.info(f"Настройки сохранены: {settings}")
-    except Exception as e:
-        logger.error(f"Ошибка сохранения настроек: {e}")
+from utilit.utilit import load_settings
 
 
 def extract_channel_identifier(channel_input: str) -> str:
@@ -116,6 +85,8 @@ async def subscribe_channel(callback: CallbackQuery):
     # Извлекаем чистый идентификатор канала
     channel_identifier = extract_channel_identifier(target_channel)
 
+    logger.info(f"Подписка на канал: https://t.me/{channel_identifier}")
+
     interval = settings.get("interval", 5)  # По умолчанию 5 секунд
 
     msg = await callback.message.answer(
@@ -142,11 +113,22 @@ async def subscribe_channel(callback: CallbackQuery):
 
             # Используем очищенный идентификатор канала
             await client(JoinChannelRequest(channel_identifier))
+
             success += 1
             logger.success(f"Подписан: {session_name}")
             await msg.edit_text(
                 msg.text + f"\n✅ {session_name} - подписан"
             )
+
+        except (UsernameNotOccupiedError, UsernameInvalidError) as e:
+            logger.error(f"Неверный username или канал не найден {session_name}: {e}")
+            await msg.edit_text(
+                msg.text + f"\n❌ {session_name} - канал не найден (username неверен или не занят)"
+            )
+            failed += 1
+            channel_not_found = True
+            # Прерываем цикл, т.к. канал не существует
+            break
 
         except FloodWaitError as e:
             logger.warning(f"FloodWait {session_name}: {e.seconds} сек")
@@ -180,6 +162,9 @@ async def subscribe_channel(callback: CallbackQuery):
         #     await msg.edit_text(
         #         msg.text + f"\n❌ {session_name} - ошибка: {error_msg}"
         #     )
+
+        except Exception as e:
+            logger.exception(e)
 
         finally:
             if client.is_connected():
