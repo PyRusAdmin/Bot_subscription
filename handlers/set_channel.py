@@ -103,8 +103,13 @@ async def set_channel_process(message: Message, state: FSMContext):
     await state.clear()
 
 
-def register_handlers_set_channel():
+def register_handlers_set_channel() -> None:
     """
-    Регистрирует обработчики установки канала
+    Регистрирует обработчики команд для установки канала
+
+    Подключает обработчики команды set_channel к роутеру бота.
+    Вызывается при инициализации бота в основном файле.
+
+    :return: None
     """
     router.callback_query.register(set_channel_start)

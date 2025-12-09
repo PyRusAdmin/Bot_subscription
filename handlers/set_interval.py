@@ -56,5 +56,13 @@ async def set_interval_process(message: Message, state: FSMContext):
         await message.answer("❌ Укажите корректное число секунд")
 
 
-def set_interval_register_handler():
+def set_interval_register_handler() -> None:
+    """
+    Регистрирует обработчики команд для установки интервала
+
+    Подключает обработчик команды set_interval к роутеру бота.
+    Вызывается при инициализации бота в основном файле.
+
+    :return: None
+    """
     router.callback_query.register(set_interval_start)
