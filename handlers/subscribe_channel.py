@@ -3,6 +3,7 @@ import asyncio
 import re
 
 from aiogram import F
+from aiogram.exceptions import TelegramBadRequest
 from aiogram.types import CallbackQuery
 from loguru import logger
 from telethon import TelegramClient
@@ -36,6 +37,10 @@ def extract_channel_identifier(channel_input: str) -> str:
     if 'joinchat/' in channel_input or '/+' in channel_input:
         # Возвращаем всю ссылку для invite links
         return channel_input
+
+    # Специальная обработка для канала vkysno_i_prossto
+    if 'vkysno_i_prossto' in channel_input:
+        return 'vkysno_i_prossto'
 
     # Извлекаем username из URL
     # Паттерн: https://t.me/username или t.me/username
@@ -85,7 +90,7 @@ async def subscribe_channel(callback: CallbackQuery):
     # Извлекаем чистый идентификатор канала
     channel_identifier = extract_channel_identifier(target_channel)
 
-    logger.info(f"Подписка на канал: https://t.me/{channel_identifier}")
+    logger.info(f"Подписка на канал: {target_channel}")
 
     interval = settings.get("interval", 5)  # По умолчанию 5 секунд
 
@@ -109,13 +114,24 @@ async def subscribe_channel(callback: CallbackQuery):
             await client.connect()
 
             # Используем очищенный идентификатор канала
-            await client(JoinChannelRequest(channel_identifier))
+            try:
+                await client(JoinChannelRequest(channel_identifier))
+                success += 1
+                logger.success(f"Подписан: {session_name}")
+                await msg.edit_text(
+                    msg.text + f"\n✅ {session_name} - подписан"
+                )
+            except ValueError:
+                logger.error(f"Аккаунт {session_name} уже подписан или не может найти канал / группу")
+            except UsernameNotOccupiedError:
+                logger.error(f"Аккаунт {session_name} уже подписан или не может найти канал / группу")
 
-            success += 1
-            logger.success(f"Подписан: {session_name}")
-            await msg.edit_text(
-                msg.text + f"\n✅ {session_name} - подписан"
-            )
+
+
+        except ValueError:
+            logger.exception(f"Аккаунт {session_name} уже подписан или не может найти канал / группу")
+        except UsernameNotOccupiedError:
+            logger.exception(f"Аккаунт {session_name} уже подписан или не может найти канал / группу")
 
         except (UsernameNotOccupiedError, UsernameInvalidError) as e:
             logger.error(f"Неверный username или канал не найден {session_name}: {e}")
@@ -179,7 +195,11 @@ async def subscribe_channel(callback: CallbackQuery):
         final_text,
         reply_markup=main_keyboard(user_id in ADMIN_IDS)
     )
-    await callback.answer()
+    try:
+        await callback.answer()
+    except TelegramBadRequest:
+        logger.error(
+            "Сервер Telegram сообщает - Неверный запрос: запрос слишком старый, время ожидания ответа истекло или идентификатор запроса неверен")
 
 
 def register_subscribe_channel() -> None:
