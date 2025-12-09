@@ -6,13 +6,10 @@ from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.types import Message, CallbackQuery
 from aiogram.utils.token import TokenValidationError
 from loguru import logger
-from telethon import TelegramClient
-from telethon.errors import FloodWaitError
-from telethon.tl.functions.channels import JoinChannelRequest
 
 from handlers.check_accounts import register_check_accounts_handlers
-from handlers.handlers import register_core_handlers
 from handlers.delete_session import register_delete_session_handlers
+from handlers.handlers import register_core_handlers
 from handlers.set_channel import register_handlers_set_channel
 from handlers.subscribe_channel import register_subscribe_channel
 from handlers.upload_session_start import register_upload_session_start
