@@ -46,19 +46,56 @@ async def check_accounts(callback: CallbackQuery):
         csv_writer = csv.writer(file)
         csv_writer.writerows(csv_data)
 
-    # Удаляем неавторизованные сессии
+    # Создаем папку для проблемных сессий
+    bad_sessions_dir = SESSIONS_DIR / "bad"
+    bad_sessions_dir.mkdir(exist_ok=True)
+    
+    # Сначала переименовываем все авторизованные сессии по номеру телефона
     for row in csv_data[1:]:  # Пропускаем заголовок
         account_name = row[0]
+        phone_number = row[2]
         status = row[1]
         
-        if status == 'Не авторизован' or status == 'Заблокирован' or status == 'Требуется пароль 2FA':
-            session_file = SESSIONS_DIR / f"{account_name}.session"
-            if session_file.exists():
+        # Пропускаем строки без номера телефона
+        if not phone_number:
+            continue
+            
+        session_file = SESSIONS_DIR / f"{account_name}.session"
+        new_session_file = SESSIONS_DIR / f"{phone_number}.session"
+        
+        if session_file.exists() and session_file != new_session_file:
+            if new_session_file.exists():
+                logger.warning(f"Файл сессии {new_session_file} уже существует, удаляю старый файл {session_file}")
                 session_file.unlink()
-                logger.info(f"Удалён файл сессии: {session_file}")
+            else:
+                session_file.rename(new_session_file)
+                logger.info(f"Переименован файл сессии: {session_file} -> {new_session_file}")
 
-    await status_msg.edit_text("Проверка завершена! Результаты сохранены в accounts.csv и неавторизованные сессии удалены",
-                               reply_markup=main_keyboard(True))
+    # Теперь обрабатываем проблемные сессии
+    for row in csv_data[1:]:  # Пропускаем заголовок
+        account_name = row[0]
+        phone_number = row[2] if row[2] else account_name
+        status = row[1]
+        session_file = SESSIONS_DIR / f"{phone_number}.session"  # используем новое имя
+        
+        if not session_file.exists():
+            continue
+            
+        if "The authorization key (session file) was used under two different IP addresses simultaneously" in status:
+            # Перемещаем в папку bad
+            new_path = bad_sessions_dir / f"{phone_number}.session"
+            if new_path.exists():
+                new_path.unlink()  # удаляем существующий файл
+            session_file.rename(new_path)
+            logger.info(f"Перемещён файл сессии в bad: {session_file} -> {new_path}")
+        elif status == 'Не авторизован' or status == 'Заблокирован' or status == 'Требуется пароль 2FA':
+            # Удаляем другие проблемные сессии
+            session_file.unlink()
+            logger.info(f"Удалён файл сессии: {session_file}")
+
+    await status_msg.edit_text(
+        "Проверка завершена! Результаты сохранены в accounts.csv и неавторизованные сессии удалены",
+        reply_markup=main_keyboard(True))
 
 
 async def validate_session(path: Path, csv_data: list):
