@@ -36,7 +36,7 @@ async def check_accounts(callback: CallbackQuery):
     )
 
     # Собираем данные для записи в CSV
-    csv_data = [['Название аккаунта', 'Статус']]
+    csv_data = [['Название аккаунта', 'Статус', 'Номер телефона']]
 
     for path in session_files:
         await validate_session(path, csv_data)
@@ -46,7 +46,19 @@ async def check_accounts(callback: CallbackQuery):
         csv_writer = csv.writer(file)
         csv_writer.writerows(csv_data)
 
-    await status_msg.edit_text("Проверка завершена! Результаты сохранены в accounts.csv", reply_markup=main_keyboard(True))
+    # Удаляем неавторизованные сессии
+    for row in csv_data[1:]:  # Пропускаем заголовок
+        account_name = row[0]
+        status = row[1]
+        
+        if status == 'Не авторизован' or status == 'Заблокирован' or status == 'Требуется пароль 2FA':
+            session_file = SESSIONS_DIR / f"{account_name}.session"
+            if session_file.exists():
+                session_file.unlink()
+                logger.info(f"Удалён файл сессии: {session_file}")
+
+    await status_msg.edit_text("Проверка завершена! Результаты сохранены в accounts.csv и неавторизованные сессии удалены",
+                               reply_markup=main_keyboard(True))
 
 
 async def validate_session(path: Path, csv_data: list):
@@ -72,24 +84,24 @@ async def validate_session(path: Path, csv_data: list):
 
         if me is None:
             logger.warning(f"Аккаунт {path.name} не авторизован")
-            csv_data.append([path.stem, 'Не авторизован'])
+            csv_data.append([path.stem, 'Не авторизован', ''])
         else:
             logger.success(f"Живой: +{me.phone or 'unknown'} ({me.id})")
-            csv_data.append([path.stem, 'Авторизован'])
+            csv_data.append([path.stem, 'Авторизован', me.phone])
 
     except (AuthKeyUnregisteredError,
             UserDeactivatedError,
             PhoneNumberBannedError):
         logger.warning(f"Мёртвый: {path.name}")
-        csv_data.append([path.stem, 'Заблокирован'])
-    
+        csv_data.append([path.stem, 'Заблокирован', ''])
+
     except SessionPasswordNeededError:
         logger.warning(f"Требуется пароль 2FA: {path.name}")
-        csv_data.append([path.stem, 'Требуется пароль 2FA'])
-        
+        csv_data.append([path.stem, 'Требуется пароль 2FA', ''])
+
     except Exception as e:
         logger.error(f"Ошибка {path.name}: {e}")
-        csv_data.append([path.stem, f'Ошибка: {str(e)}'])
+        csv_data.append([path.stem, f'Ошибка: {str(e)}', ''])
 
     finally:
         if client.is_connected():
