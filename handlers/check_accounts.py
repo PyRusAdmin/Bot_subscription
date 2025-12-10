@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from pathlib import Path
-
+import csv
 from aiogram import F
 from aiogram.types import CallbackQuery
 from loguru import logger
@@ -20,11 +20,8 @@ async def check_accounts(callback: CallbackQuery):
     Проверяет доступ к аккаунтам Telegram через Telethon клиент.
     Доступно только для администраторов.
     
-    Args:
-        callback (CallbackQuery): Объект callback-запроса от пользователя
-    
-    Returns:
-        None
+    :param callback:Объект callback-запроса от пользователя
+    :return: None
     """
     if callback.from_user.id not in ADMIN_IDS:
         return await callback.answer("Доступ запрещён", show_alert=True)
@@ -38,27 +35,31 @@ async def check_accounts(callback: CallbackQuery):
         f"Начинаю проверку {len(session_files)} сессий..."
     )
 
+    # Собираем данные для записи в CSV
+    csv_data = [['Название аккаунта', 'Статус']]
+
     for path in session_files:
-        await validate_session(path)
+        await validate_session(path, csv_data)
 
-    await status_msg.edit_text("Проверка завершена!", reply_markup=main_keyboard(True))
+    # Записываем данные в accounts.csv
+    with open('accounts.csv', mode='w', newline='', encoding='utf-8') as file:
+        csv_writer = csv.writer(file)
+        csv_writer.writerows(csv_data)
+
+    await status_msg.edit_text("Проверка завершена! Результаты сохранены в accounts.csv", reply_markup=main_keyboard(True))
 
 
-async def validate_session(path: Path):
+async def validate_session(path: Path, csv_data: list):
     """
     Проверяет валидность одной сессии Telegram.
     
     Подключается к аккаунту через Telethon и проверяет его состояние.
     Логирует результат проверки (живой/мёртвый/ошибка).
+    Добавляет результат в csv_data.
     
-    Args:
-        path (Path): Путь к файлу сессии .session
-    
-    Returns:
-        None
-    
-    Raises:
-        Exception: При ошибках подключения или других неожиданных проблемах
+    :param path: Путь к файлу сессии .session
+    :param csv_data: Список для добавления данных о статусе аккаунта
+    :return: None
     """
     logger.info(f"Проверка: {path.name}")
     client = TelegramClient(str(path), API_ID, API_HASH)
@@ -71,20 +72,24 @@ async def validate_session(path: Path):
 
         if me is None:
             logger.warning(f"Аккаунт {path.name} не авторизован")
+            csv_data.append([path.stem, 'Не авторизован'])
         else:
-            logger.info(me)
-            phone = me.phone or "unknown"
-
-            logger.success(f"Живой: +{phone} ({me.id})")
+            logger.success(f"Живой: +{me.phone or 'unknown'} ({me.id})")
+            csv_data.append([path.stem, 'Авторизован'])
 
     except (AuthKeyUnregisteredError,
             UserDeactivatedError,
-            PhoneNumberBannedError,
-            SessionPasswordNeededError):
+            PhoneNumberBannedError):
         logger.warning(f"Мёртвый: {path.name}")
-
+        csv_data.append([path.stem, 'Заблокирован'])
+    
+    except SessionPasswordNeededError:
+        logger.warning(f"Требуется пароль 2FA: {path.name}")
+        csv_data.append([path.stem, 'Требуется пароль 2FA'])
+        
     except Exception as e:
         logger.error(f"Ошибка {path.name}: {e}")
+        csv_data.append([path.stem, f'Ошибка: {str(e)}'])
 
     finally:
         if client.is_connected():
