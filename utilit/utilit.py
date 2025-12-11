@@ -1,7 +1,19 @@
 # -*- coding: utf-8 -*-
+import csv
 import json
+
 from loguru import logger
+
 from system.system import SETTINGS_FILE
+
+
+def writes_data_to_csv_file(csv_data):
+    """Записывает данные в CSV файл"""
+
+    # Записываем данные в accounts.csv
+    with open('accounts.csv', mode='w', newline='', encoding='utf-8') as file:
+        csv_writer = csv.writer(file)
+        csv_writer.writerows(csv_data)
 
 
 def load_settings():

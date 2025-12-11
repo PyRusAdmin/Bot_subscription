@@ -8,6 +8,7 @@ from loguru import logger
 from keyboards.keyboards import main_keyboard
 from system.system import router, ADMIN_IDS, SESSIONS_DIR
 from utilit.telegram_client import validate_session
+from utilit.utilit import writes_data_to_csv_file
 
 
 @router.callback_query(F.data == "check_accounts")
@@ -39,10 +40,7 @@ async def check_accounts(callback: CallbackQuery):
     for path in session_files:
         await validate_session(path, csv_data)
 
-    # Записываем данные в accounts.csv
-    with open('accounts.csv', mode='w', newline='', encoding='utf-8') as file:
-        csv_writer = csv.writer(file)
-        csv_writer.writerows(csv_data)
+    writes_data_to_csv_file(csv_data)
 
     # Создаем папку для проблемных сессий
     bad_sessions_dir = SESSIONS_DIR / "bad"
