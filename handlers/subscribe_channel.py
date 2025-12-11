@@ -135,7 +135,7 @@ async def subscribe_channel(callback: CallbackQuery):
                     reply_markup=main_keyboard(user_id in ADMIN_IDS)
                 )
             except sqlite3.DatabaseError:
-                pass
+                await client.disconnect()
 
 
         except ValueError:
