@@ -23,11 +23,6 @@ async def check_accounts(callback: CallbackQuery):
     if callback.from_user.id not in ADMIN_IDS:
         return await callback.answer("Доступ запрещён", show_alert=True)
 
-    # session_files = list(SESSIONS_DIR.glob("*.session"))
-    # if not session_files:
-    #     await callback.message.answer("Нет сессий в папке sessions/")
-    #     return await callback.answer()
-
     status_msg = await callback.message.answer("Начинаю проверку аккаунтов. Это может занять некоторое время...")
 
     # Собираем данные для записи в CSV
@@ -36,11 +31,7 @@ async def check_accounts(callback: CallbackQuery):
     for path in list(SESSIONS_DIR.glob("*.session")):
         await validate_session(path, csv_data)
 
-    writes_data_to_csv_file(csv_data)
-
-    # Создаем папку для проблемных сессий
-    bad_sessions_dir = SESSIONS_DIR / "bad"
-    bad_sessions_dir.mkdir(exist_ok=True)
+    writes_data_to_csv_file(csv_data)  # Записываем в accounts.csv
 
     # Сначала переименовываем все авторизованные сессии по номеру телефона
     for row in csv_data[1:]:  # Пропускаем заголовок
@@ -75,7 +66,7 @@ async def check_accounts(callback: CallbackQuery):
 
         if "The authorization key (session file) was used under two different IP addresses simultaneously" in status:
             # Перемещаем в папку bad
-            new_path = bad_sessions_dir / f"{phone_number}.session"
+            new_path = SESSIONS_DIR / "bad" / f"{phone_number}.session"
             if new_path.exists():
                 new_path.unlink()  # удаляем существующий файл
             session_file.rename(new_path)

@@ -13,13 +13,14 @@ def setup_project() -> None:
 
     :return: None
     """
-        # Установка зависимостей
+    # Установка зависимостей
     print("📦 Устанавливаем зависимости...")
     os.system("pip install -r requirements.txt")
 
     # Создание необходимых директорий
     create_directory("sessions")
     create_directory("log")
+    create_directory("sessions/bad")
 
     print("✅ Установка завершена!")
 
