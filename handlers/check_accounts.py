@@ -50,20 +50,20 @@ async def check_accounts(callback: CallbackQuery):
     # Создаем папку для проблемных сессий
     bad_sessions_dir = SESSIONS_DIR / "bad"
     bad_sessions_dir.mkdir(exist_ok=True)
-    
+
     # Сначала переименовываем все авторизованные сессии по номеру телефона
     for row in csv_data[1:]:  # Пропускаем заголовок
         account_name = row[0]
         phone_number = row[2]
         status = row[1]
-        
+
         # Пропускаем строки без номера телефона
         if not phone_number:
             continue
-            
+
         session_file = SESSIONS_DIR / f"{account_name}.session"
         new_session_file = SESSIONS_DIR / f"{phone_number}.session"
-        
+
         if session_file.exists() and session_file != new_session_file:
             if new_session_file.exists():
                 logger.warning(f"Файл сессии {new_session_file} уже существует, удаляю старый файл {session_file}")
@@ -78,10 +78,10 @@ async def check_accounts(callback: CallbackQuery):
         phone_number = row[2] if row[2] else account_name
         status = row[1]
         session_file = SESSIONS_DIR / f"{phone_number}.session"  # используем новое имя
-        
+
         if not session_file.exists():
             continue
-            
+
         if "The authorization key (session file) was used under two different IP addresses simultaneously" in status:
             # Перемещаем в папку bad
             new_path = bad_sessions_dir / f"{phone_number}.session"

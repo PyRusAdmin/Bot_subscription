@@ -163,7 +163,8 @@ async def subscribe_channel(callback: CallbackQuery):
 
 
         except (ChannelPrivateError, InviteHashExpiredError) as e:
-            logger.warning(f"Канал недоступен для {session_name}: приватный канал, отсутствует доступ или аккаунт был забанен — {e}")
+            logger.warning(
+                f"Канал недоступен для {session_name}: приватный канал, отсутствует доступ или аккаунт был забанен — {e}")
             await client.disconnect()
             await msg.edit_text(
                 msg.text + f"\n❌ {session_name} - приватный канал / доступ запрещён / ссылка устарела или аккаунт был забанен"
