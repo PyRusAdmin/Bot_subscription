@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-import csv
-
 from aiogram import F
 from aiogram.types import CallbackQuery
 from loguru import logger
@@ -25,19 +23,17 @@ async def check_accounts(callback: CallbackQuery):
     if callback.from_user.id not in ADMIN_IDS:
         return await callback.answer("Доступ запрещён", show_alert=True)
 
-    session_files = list(SESSIONS_DIR.glob("*.session"))
-    if not session_files:
-        await callback.message.answer("Нет сессий в папке sessions/")
-        return await callback.answer()
+    # session_files = list(SESSIONS_DIR.glob("*.session"))
+    # if not session_files:
+    #     await callback.message.answer("Нет сессий в папке sessions/")
+    #     return await callback.answer()
 
-    status_msg = await callback.message.answer(
-        f"Начинаю проверку {len(session_files)} сессий..."
-    )
+    status_msg = await callback.message.answer("Начинаю проверку аккаунтов. Это может занять некоторое время...")
 
     # Собираем данные для записи в CSV
     csv_data = [['Название аккаунта', 'Статус', 'Номер телефона']]
 
-    for path in session_files:
+    for path in list(SESSIONS_DIR.glob("*.session")):
         await validate_session(path, csv_data)
 
     writes_data_to_csv_file(csv_data)
