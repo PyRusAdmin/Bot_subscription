@@ -88,19 +88,21 @@ async def client_connect_string_session(session_name: str) -> TelegramClient | N
         return None  # Не возвращаем клиента
 
 
-async def get_string_session(session_name) -> None:
-    client = TelegramClient(session=session_name, api_id=API_ID, api_hash=API_HASH,
-                            system_version="4.16.30-vxCUSTOM")
+async def get_string_session(session_name) -> str:
+    # Создаем клиент из существующего файла сессии
+    client = TelegramClient(
+        session=session_name,
+        api_id=API_ID,
+        api_hash=API_HASH,
+        system_version="4.16.30-vxCUSTOM"
+    )
+
     await client.connect()
-    logger.info(f"✨ STRING SESSION: {StringSession.save(client.session)}")
+
+    # Извлекаем string session из существующей сессии
     session_string = StringSession.save(client.session)
     logger.info(f"✨ STRING SESSION: {session_string}")
+
     await client.disconnect()
-    client = TelegramClient(StringSession(session_string), api_id=API_ID, api_hash=API_HASH,
-                            system_version="4.16.30-vxCUSTOM")
-    await client.connect()
-    me = await client.get_me()
-    # try:
-    phone = me.phone or ""
-    logger.info(f"🧾 Аккаунт: | ID: {me.id} | Phone: {phone}")
-    await client.disconnect()
+
+    return session_string

@@ -1,11 +1,14 @@
 # -*- coding: utf-8 -*-
+import csv
+from pathlib import Path
+
 from aiogram import F
 from aiogram.types import CallbackQuery
 from loguru import logger
 
 from keyboards.keyboards import main_keyboard
 from system.system import router, ADMIN_IDS, SESSIONS_DIR
-from utilit.telegram_client import validate_session
+from utilit.telegram_client import validate_session, get_string_session
 from utilit.utilit import writes_data_to_csv_file
 
 
@@ -37,7 +40,6 @@ async def check_accounts(callback: CallbackQuery):
     for row in csv_data[1:]:  # Пропускаем заголовок
         account_name = row[0]
         phone_number = row[2]
-        # status = row[1]
 
         # Пропускаем строки без номера телефона
         if not phone_number:
@@ -76,9 +78,50 @@ async def check_accounts(callback: CallbackQuery):
             session_file.unlink()
             logger.info(f"Удалён файл сессии: {session_file}")
 
+    await save_sessions_to_csv()  # Сохраняем все сессии в accounts_string.csv
+    delete_session_files(".")  # Удаляем все .session файлы
+
     await status_msg.edit_text(
         text="Проверка завершена! Результаты сохранены в accounts.csv и неавторизованные сессии удалены",
         reply_markup=main_keyboard(True))
+
+
+def delete_session_files(directory: str = ".") -> int:
+    """Удаляет все .session файлы"""
+    deleted_count = 0
+    path = Path(directory)
+
+    for session_file in path.glob("*.session"):
+        try:
+            session_file.unlink()
+            logger.info(f"🗑️ Удален: {session_file}")
+            deleted_count += 1
+        except Exception as e:
+            logger.error(f"❌ Ошибка при удалении {session_file}: {e}")
+
+    logger.info(f"✅ Удалено файлов: {deleted_count}")
+    # return deleted_count
+
+
+async def save_sessions_to_csv():
+    # Путь к директории с сессиями
+    SESSIONS_DIR = Path("sessions")
+
+    # Собираем данные для записи в CSV
+    csv_data = [['Название аккаунта', 'Session String']]
+
+    # Проходим по всем .session файлам в папке sessions
+    for session_file in SESSIONS_DIR.glob("*.session"):
+        session_name = session_file.stem  # Имя файла без расширения
+        session_string = await get_string_session(session_name=session_name)
+        csv_data.append([session_name, session_string])
+
+    # Записываем в CSV файл
+    with open('accounts_string.csv', mode='w', newline='', encoding='utf-8') as file:
+        csv_writer = csv.writer(file)
+        csv_writer.writerows(csv_data)
+
+    print("✅ Все сессии сохранены в accounts_string.csv")
 
 
 def register_check_accounts_handlers():
