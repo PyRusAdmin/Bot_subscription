@@ -8,7 +8,7 @@ from aiogram.types import CallbackQuery
 from loguru import logger
 from telethon import TelegramClient
 from telethon.errors import (FloodWaitError, ChannelPrivateError, InviteHashExpiredError, UsernameNotOccupiedError,
-                             UsernameInvalidError)
+                             UsernameInvalidError, FrozenMethodInvalidError)
 from telethon.tl.functions.channels import JoinChannelRequest
 
 from keyboards.keyboards import main_keyboard
@@ -125,7 +125,13 @@ async def subscribe_channel(callback: CallbackQuery):
                 logger.error(f"Аккаунт {session_name} уже подписан или не может найти канал / группу")
             except UsernameNotOccupiedError:
                 logger.error(f"Аккаунт {session_name} уже подписан или не может найти канал / группу")
-
+            except FrozenMethodInvalidError:
+                logger.error(f"Аккаунт {session_name} заморожен")
+                final_text = (f"Аккаунт {session_name} заморожен")
+                await msg.edit_text(
+                    final_text,
+                    reply_markup=main_keyboard(user_id in ADMIN_IDS)
+                )
 
 
         except ValueError:
