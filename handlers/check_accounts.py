@@ -77,7 +77,7 @@ async def check_accounts(callback: CallbackQuery):
             logger.info(f"Удалён файл сессии: {session_file}")
 
     await status_msg.edit_text(
-        "Проверка завершена! Результаты сохранены в accounts.csv и неавторизованные сессии удалены",
+        text="Проверка завершена! Результаты сохранены в accounts.csv и неавторизованные сессии удалены",
         reply_markup=main_keyboard(True))
 
 
