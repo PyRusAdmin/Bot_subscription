@@ -15,6 +15,7 @@ from telethon.tl.functions.channels import JoinChannelRequest
 from keyboards.keyboards import main_keyboard
 from system.system import API_ID, API_HASH
 from system.system import router, ADMIN_IDS, SESSIONS_DIR
+from utilit.telegram_client import safe_disconnect
 from utilit.utilit import load_settings
 
 
@@ -53,28 +54,6 @@ def extract_channel_identifier(channel_input: str) -> str:
         return channel_input[1:]
 
     return channel_input
-
-
-async def safe_disconnect(client: TelegramClient, session_name: str) -> None:
-    """
-    Безопасное отключение клиента с обработкой ошибок БД
-
-    :param client: Клиент Telethon
-    :param session_name: Имя сессии для логирования
-    """
-    try:
-        if client and client.is_connected():
-            await client.disconnect()
-    except sqlite3.DatabaseError as e:
-        logger.error(f"Ошибка БД при отключении {session_name}: {e}")
-        # Пытаемся принудительно закрыть соединение
-        try:
-            if hasattr(client, '_sender') and client._sender:
-                await client._sender.disconnect()
-        except Exception as disconnect_error:
-            logger.error(f"Не удалось закрыть соединение {session_name}: {disconnect_error}")
-    except Exception as e:
-        logger.error(f"Неожиданная ошибка при отключении {session_name}: {e}")
 
 
 @router.callback_query(F.data == "subscribe_channel")

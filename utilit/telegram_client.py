@@ -106,3 +106,25 @@ async def get_string_session(session_name) -> str:
     await client.disconnect()
 
     return session_string
+
+
+async def safe_disconnect(client: TelegramClient, session_name: str) -> None:
+    """
+    Безопасное отключение клиента с обработкой ошибок БД
+
+    :param client: Клиент Telethon
+    :param session_name: Имя сессии для логирования
+    """
+    try:
+        if client and client.is_connected():
+            await client.disconnect()
+    except sqlite3.DatabaseError as e:
+        logger.error(f"Ошибка БД при отключении {session_name}: {e}")
+        # Пытаемся принудительно закрыть соединение
+        try:
+            if hasattr(client, '_sender') and client._sender:
+                await client._sender.disconnect()
+        except Exception as disconnect_error:
+            logger.error(f"Не удалось закрыть соединение {session_name}: {disconnect_error}")
+    except Exception as e:
+        logger.error(f"Неожиданная ошибка при отключении {session_name}: {e}")
