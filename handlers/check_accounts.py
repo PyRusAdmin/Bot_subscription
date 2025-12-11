@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import sqlite3
 from pathlib import Path
 import csv
 from aiogram import F
@@ -135,6 +136,9 @@ async def validate_session(path: Path, csv_data: list):
     except SessionPasswordNeededError:
         logger.warning(f"Требуется пароль 2FA: {path.name}")
         csv_data.append([path.stem, 'Требуется пароль 2FA', ''])
+
+    except sqlite3.DatabaseError:
+        await client.disconnect()
 
     except Exception as e:
         logger.error(f"Ошибка {path.name}: {e}")
