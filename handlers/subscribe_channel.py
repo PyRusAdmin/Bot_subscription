@@ -10,13 +10,11 @@ from loguru import logger
 from telethon import TelegramClient
 from telethon.errors import (FloodWaitError, ChannelPrivateError, InviteHashExpiredError, UsernameNotOccupiedError,
                              UsernameInvalidError, FrozenMethodInvalidError)
-from telethon.sessions import StringSession
 from telethon.tl.functions.channels import JoinChannelRequest
 
 from keyboards.keyboards import main_keyboard
 from system.system import API_ID, API_HASH
 from system.system import router, ADMIN_IDS, SESSIONS_DIR
-from utilit.telegram_client import get_string_session
 from utilit.utilit import load_settings
 
 
