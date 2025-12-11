@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import asyncio
 import re
+import sqlite3
 
 from aiogram import F
 from aiogram.exceptions import TelegramBadRequest
@@ -133,6 +134,8 @@ async def subscribe_channel(callback: CallbackQuery):
                     final_text,
                     reply_markup=main_keyboard(user_id in ADMIN_IDS)
                 )
+            except sqlite3.DatabaseError:
+                pass
 
 
         except ValueError:
