@@ -127,6 +127,7 @@ async def subscribe_channel(callback: CallbackQuery):
                 logger.error(f"Аккаунт {session_name} уже подписан или не может найти канал / группу")
             except FrozenMethodInvalidError:
                 logger.error(f"Аккаунт {session_name} заморожен")
+                await client.disconnect()
                 final_text = (f"Аккаунт {session_name} заморожен")
                 await msg.edit_text(
                     final_text,
@@ -160,6 +161,7 @@ async def subscribe_channel(callback: CallbackQuery):
 
         except (ChannelPrivateError, InviteHashExpiredError) as e:
             logger.warning(f"Канал недоступен для {session_name}: приватный канал, отсутствует доступ или аккаунт был забанен — {e}")
+            await client.disconnect()
             await msg.edit_text(
                 msg.text + f"\n❌ {session_name} - приватный канал / доступ запрещён / ссылка устарела или аккаунт был забанен"
             )
