@@ -7,6 +7,7 @@ from loguru import logger
 
 from keyboards.keyboards import main_keyboard
 from system.system import router, ADMIN_IDS, SESSIONS_DIR
+from utilit.telegram_client import validate_session
 
 
 @router.callback_query(F.data == "check_accounts")
