@@ -157,12 +157,15 @@ async def subscribe_channel(callback: CallbackQuery):
             await asyncio.sleep(e.seconds)
             failed += 1
 
+
         except (ChannelPrivateError, InviteHashExpiredError) as e:
-            logger.warning(f"Канал недоступен {session_name}: {e}")
+            logger.warning(f"Канал недоступен для {session_name}: приватный канал, отсутствует доступ или аккаунт был забанен — {e}")
             await msg.edit_text(
-                msg.text + f"\n❌ {session_name} - канал закрыт/ссылка недействительна"
+                msg.text + f"\n❌ {session_name} - приватный канал / доступ запрещён / ссылка устарела или аккаунт был забанен"
             )
             failed += 1
+
+
 
         except (UsernameNotOccupiedError, UsernameInvalidError) as e:
             logger.error(f"Неверный username канала {session_name}: {e}")
