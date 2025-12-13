@@ -88,18 +88,18 @@ async def main() -> None:
         dp = Dispatcher(storage=MemoryStorage())
         dp.include_router(router)
 
-        register_upload_session_start()
-        register_check_accounts_handlers()
-        register_core_handlers()
-        register_delete_session_handlers()
+        register_upload_session_start()  # Регистрация обработчиков загрузки сессии
+        register_check_accounts_handlers()  # Регистрация обработчиков проверки аккаунтов
+        register_core_handlers()  # Регистрация основных обработчиков
+        register_delete_session_handlers()  # Регистрация обработчиков удаления сессии
 
-        register_subscribe_channel()
+        register_subscribe_channel()  # Регистрация обработчиков подписки на канал
 
-        register_handlers_set_channel()
+        register_handlers_set_channel()  # Регистрация обработчиков установки канала
 
-        set_interval_register_handler()
+        set_interval_register_handler()  # Регистрация обработчиков установки интервала
 
-        register_show_accounts()
+        register_show_accounts()  # Регистрация обработчиков отображения аккаунтов
 
         logger.success("🤖 Бот запущен...")
         await dp.start_polling(bot)

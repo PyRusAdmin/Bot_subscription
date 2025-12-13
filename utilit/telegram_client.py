@@ -78,7 +78,7 @@ async def client_connect_string_session(session_name: str) -> TelegramClient | N
         me = await client.get_me()
         phone = me.phone or ""
         logger.info(f"🧾 Аккаунт: | ID: {me.id} | Phone: {phone}")
-        # await app_logger.log_and_display(message=f"🧾 Аккаунт: | ID: {me.id} | Phone: {phone}")
+        # await  logger.info(message=f"🧾 Аккаунт: | ID: {me.id} | Phone: {phone}")
         return client
 
     except AuthKeyDuplicatedError:
