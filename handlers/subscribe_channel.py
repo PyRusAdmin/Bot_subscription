@@ -57,31 +57,25 @@ async def checking_links(client, link) -> None:
                                 f"Количество участников: {result.participants_count}, "
                                 f"Мега-группа: {'Да' if result.megagroup else 'Нет'}, Описание: {result.about or 'Нет описания'}")
                     try:
-                        await  logger.info(
+                        logger.info(
                             message=f"Подписка на группу / канал по ссылке приглашению {link}")
                         try:
                             await client(ImportChatInviteRequest(
                                 link_hash))  # Подписка на группу / канал по ссылке приглашению
                         except InviteHashInvalidError:
-                            await  logger.info(
-                                message=translations["ru"]["errors"]["invite_request_sent"])
+                            logger.info(message=translations["ru"]["errors"]["invite_request_sent"])
                     except InviteHashExpiredError:
-                        await  logger.info(
-                            message=translations["ru"]["errors"]["subscribe_error"])
+                        logger.info(message=translations["ru"]["errors"]["subscribe_error"])
                         try:
                             await client(ImportChatInviteRequest(
                                 link_hash))  # Подписка на группу / канал по ссылке приглашению
-                            await  logger.info(
-                                message=f"Подписка на группу / канал по ссылке приглашению {link_hash}")
+                            logger.info(message=f"Подписка на группу / канал по ссылке приглашению {link_hash}")
                         except InviteHashInvalidError:
-                            await  logger.info(
-                                message=translations["ru"]["errors"]["invite_request_sent"])
+                            logger.info(message=translations["ru"]["errors"]["invite_request_sent"])
                 elif isinstance(result, types.ChatInviteAlready):
-                    logger.info(
-                        message=f"Вы уже состоите в группе: {link}, Название группы: {result.chat.title}")
+                    logger.info(f"Вы уже состоите в группе: {link}, Название группы: {result.chat.title}")
             except FloodWaitError as e:
-                logger.info(message=f"{translations["ru"]["errors"]["flood_wait"]}{e}",
-                                   level="error")
+                logger.info(message=f"{translations["ru"]["errors"]["flood_wait"]}{e}", level="error")
 
         elif link.startswith("https://t.me/"):
             # Извлекаем имя пользователя или группы
@@ -130,8 +124,7 @@ async def checking_links(client, link) -> None:
                     logger.info(
                         message=f"Вы уже состоите в группе: {link}, Название группы: {result.chat.title}")
             except FloodWaitError as e:
-                logger.info(message=f"{translations["ru"]["errors"]["flood_wait"]}{e}",
-                                    level="error")
+                logger.info(message=f"{translations["ru"]["errors"]["flood_wait"]}{e}", level="error")
             except InviteHashExpiredError:
                 logger.info(message=f"Повторная проверка ссылки: {link}")
                 try:
@@ -168,7 +161,7 @@ async def checking_links(client, link) -> None:
 
     except FloodWaitError as e:
         logger.info(message=f"{translations["ru"]["errors"]["flood_wait"]}{e}",
-                            level="error")
+                    level="error")
     except InviteRequestSentError:
         logger.info(message=translations["ru"]["errors"]["invite_request_sent"])
     except AuthKeyUnregisteredError:
