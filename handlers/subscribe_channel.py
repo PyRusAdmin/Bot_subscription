@@ -52,7 +52,7 @@ async def checking_links(client, link) -> None:
             try:
                 result = await client(functions.messages.CheckChatInviteRequest(hash=link_hash))
                 if isinstance(result, types.ChatInvite):
-                    await  logger.info(
+                    logger.info(
                         message=f"Ссылка валидна: {link}, Название группы: {result.title}, "
                                 f"Количество участников: {result.participants_count}, "
                                 f"Мега-группа: {'Да' if result.megagroup else 'Нет'}, Описание: {result.about or 'Нет описания'}")
@@ -77,10 +77,10 @@ async def checking_links(client, link) -> None:
                             await  logger.info(
                                 message=translations["ru"]["errors"]["invite_request_sent"])
                 elif isinstance(result, types.ChatInviteAlready):
-                    await  logger.info(
+                    logger.info(
                         message=f"Вы уже состоите в группе: {link}, Название группы: {result.chat.title}")
             except FloodWaitError as e:
-                await  logger.info(message=f"{translations["ru"]["errors"]["flood_wait"]}{e}",
+                logger.info(message=f"{translations["ru"]["errors"]["flood_wait"]}{e}",
                                    level="error")
 
         elif link.startswith("https://t.me/"):
@@ -90,7 +90,7 @@ async def checking_links(client, link) -> None:
                 result = await client(functions.contacts.ResolveUsernameRequest(username=username))
                 chat = result.chats[0] if result.chats else None
                 if chat:
-                    await   logger.info(
+                    logger.info(
                         message=f"Публичная группа/канал: {link}, Название: {chat.title}, "
                                 f"Количество участников: {chat.participants_count if hasattr(chat, 'participants_count') else 'Неизвестно'}, "
                                 f"Мега-группа: {'Да' if getattr(chat, 'megagroup', False) else 'Нет'}")
@@ -98,10 +98,10 @@ async def checking_links(client, link) -> None:
                     try:
                         await client(JoinChannelRequest(link))
                     except ChannelsTooMuchError:
-                        await   logger.info(
+                        logger.info(
                             message=translations["ru"]["errors"]["user_channels_too_much"])
                 else:
-                    await   logger.info(message=f"Не удалось найти публичный чат: {link}")
+                    logger.info(message=f"Не удалось найти публичный чат: {link}")
             except UsernameInvalidError:
                 logger.error(f"Неверная ссылка: {link}. Переводим в формат https://t.me/...")
                 parts = link.rstrip("/").split("/")
@@ -109,41 +109,41 @@ async def checking_links(client, link) -> None:
                 result = await client(functions.contacts.ResolveUsernameRequest(username=link))
                 chat = result.chats[0] if result.chats else None
                 if chat:
-                    await   logger.info(
+                    logger.info(
                         message=f"Публичная группа/канал: {link}, Название: {chat.title}, "
                                 f"Количество участников: {chat.participants_count if hasattr(chat, 'participants_count') else 'Неизвестно'}, "
                                 f"Мега-группа: {'Да' if getattr(chat, 'megagroup', False) else 'Нет'}")
                 else:
-                    await   logger.info(f"Не удалось найти публичный чат: {link}")
+                    logger.info(f"Не удалось найти публичный чат: {link}")
         else:
             # Считаем, что это просто хэш
             try:
                 result = await client(functions.messages.CheckChatInviteRequest(hash=link))
                 if isinstance(result, types.ChatInvite):
-                    await   logger.info(
+                    logger.info(
                         message=f"Ссылка валидна: {link}, Название группы: {result.title}, "
                                 f"Количество участников: {result.participants_count}, "
                                 f"Мега-группа: {'Да' if result.megagroup else 'Нет'}, "
                                 f"Описание: {result.about or 'Нет описания'}")
                     await client(JoinChannelRequest(link))
                 elif isinstance(result, types.ChatInviteAlready):
-                    await   logger.info(
+                    logger.info(
                         message=f"Вы уже состоите в группе: {link}, Название группы: {result.chat.title}")
             except FloodWaitError as e:
-                await   logger.info(message=f"{translations["ru"]["errors"]["flood_wait"]}{e}",
+                logger.info(message=f"{translations["ru"]["errors"]["flood_wait"]}{e}",
                                     level="error")
             except InviteHashExpiredError:
-                await   logger.info(message=f"Повторная проверка ссылки: {link}")
+                logger.info(message=f"Повторная проверка ссылки: {link}")
                 try:
                     result = await client(functions.contacts.ResolveUsernameRequest(username=link))
                     chat = result.chats[0] if result.chats else None
                     if chat:
-                        await   logger.info(
+                        logger.info(
                             message=f"Публичная группа/канал: {link}, Название: {chat.title}, "
                                     f"Количество участников: {chat.participants_count if hasattr(chat, 'participants_count') else 'Неизвестно'}, "
                                     f"Мега-группа: {'Да' if getattr(chat, 'megagroup', False) else 'Нет'}")
                     else:
-                        await   logger.info(message=f"Не удалось найти публичный чат: {link}")
+                        logger.info(message=f"Не удалось найти публичный чат: {link}")
                 except UsernameInvalidError:
                     logger.error(f"Неверная ссылка: {link}. Переводим в формат https://t.me/...")
                     username = link.split("@")[-1]
@@ -152,30 +152,30 @@ async def checking_links(client, link) -> None:
                     result = await client(functions.contacts.ResolveUsernameRequest(username=username))
                     chat = result.chats[0] if result.chats else None
                     if chat:
-                        await   logger.info(
+                        logger.info(
                             message=f"Публичная группа/канал: {link}, Название: {chat.title}, "
                                     f"Количество участников: {chat.participants_count if hasattr(chat, 'participants_count') else 'Неизвестно'}, "
                                     f"Мега-группа: {'Да' if getattr(chat, 'megagroup', False) else 'Нет'}")
                     else:
-                        await   logger.info(message=f"Не удалось найти публичный чат: {link}")
+                        logger.info(message=f"Не удалось найти публичный чат: {link}")
 
             except AuthKeyUnregisteredError:
-                await   logger.info(message=translations["ru"]["errors"]["auth_key_unregistered"])
+                logger.info(message=translations["ru"]["errors"]["auth_key_unregistered"])
                 await asyncio.sleep(2)
             except SessionPasswordNeededError:
-                await   logger.info(message=translations["ru"]["errors"]["two_factor_required"])
+                logger.info(message=translations["ru"]["errors"]["two_factor_required"])
                 await asyncio.sleep(2)
 
     except FloodWaitError as e:
-        await   logger.info(message=f"{translations["ru"]["errors"]["flood_wait"]}{e}",
+        logger.info(message=f"{translations["ru"]["errors"]["flood_wait"]}{e}",
                             level="error")
     except InviteRequestSentError:
-        await   logger.info(message=translations["ru"]["errors"]["invite_request_sent"])
+        logger.info(message=translations["ru"]["errors"]["invite_request_sent"])
     except AuthKeyUnregisteredError:
-        await   logger.info(message=translations["ru"]["errors"]["auth_key_unregistered"])
+        logger.info(message=translations["ru"]["errors"]["auth_key_unregistered"])
         await asyncio.sleep(2)
     except SessionPasswordNeededError:
-        await   logger.info(message=translations["ru"]["errors"]["two_factor_required"])
+        logger.info(message=translations["ru"]["errors"]["two_factor_required"])
         await asyncio.sleep(2)
 
 
