@@ -202,35 +202,19 @@ def extract_channel_identifier(channel_input: str) -> str:
 
 @router.callback_query(F.data == "subscribe_channel")
 async def subscribe_channel(callback: CallbackQuery):
-    """
-    Обработчик подписки на канал
-
-    Подписывает все аккаунты из папки sessions на целевой канал.
-    Соблюдает заданный интервал между действиями.
-    Отображает статистику выполнения операции.
-
-    :param callback: Объект callback-запроса
-    :return: None
-    """
     user_id = callback.from_user.id
 
-    # Загружаем настройки из JSON
     settings = load_settings()
-
     target_channel = settings.get("target_channel")
     if not target_channel:
         await callback.message.answer("❌ Администратор не установил целевой канал")
         await callback.answer()
         return
 
-    # Извлекаем чистый идентификатор канала
-    channel_identifier = extract_channel_identifier(target_channel)
-
-    logger.info(f"Подписка на канал: {target_channel}")
+    channel_input = target_channel.strip()
+    logger.info(f"Подписка на канал: {channel_input}")
 
     interval = settings.get("interval", 5)
-
-    # Получаем список всех сессий
     session_files = list(SESSIONS_DIR.glob("*.session"))
 
     if not session_files:
@@ -238,10 +222,25 @@ async def subscribe_channel(callback: CallbackQuery):
         await callback.answer()
         return
 
-    # Создаем начальное сообщение
+    # Определяем тип ссылки
+    is_invite_link = False
+    invite_hash = None
+    username = None
+
+    if '/joinchat/' in channel_input or '/+' in channel_input:
+        is_invite_link = True
+        # Извлекаем хеш: всё после последнего '/'
+        invite_hash = channel_input.split('/')[-1]
+        # Убираем возможный '+' в начале (для /+xxxx → xxxx)
+        if invite_hash.startswith('+'):
+            invite_hash = invite_hash[1:]
+    else:
+        # Публичный канал: извлекаем юзернейм
+        username = extract_channel_identifier(channel_input)
+
     msg = await callback.message.answer(
-        f"🔄 Начинаю подписку на: {target_channel}\n"
-        f"Идентификатор: {channel_identifier}\n"
+        f"🔄 Начинаю подписку на: {channel_input}\n"
+        f"Тип: {'Приглашение' if is_invite_link else 'Публичный канал'}\n"
         f"Интервал: {interval} сек\n"
         f"Аккаунтов: {len(session_files)}"
     )
@@ -251,7 +250,7 @@ async def subscribe_channel(callback: CallbackQuery):
     db_errors = 0
     channel_not_found = False
 
-    for session_file in session_files:
+    for i, session_file in enumerate(session_files):
         session_name = session_file.stem
         client = None
 
@@ -262,163 +261,130 @@ async def subscribe_channel(callback: CallbackQuery):
                 api_hash=API_HASH,
                 system_version="4.16.30-vxCUSTOM"
             )
-
             await client.connect()
 
             if not await client.is_user_authorized():
                 logger.warning(f"Аккаунт {session_name} не авторизован")
-                await msg.edit_text(
-                    msg.text + f"\n⚠️ {session_name} - не авторизован"
-                )
+                await msg.edit_text(msg.text + f"\n⚠️ {session_name} - не авторизован")
                 failed += 1
-                await safe_disconnect(client, session_name)
                 continue
 
             me = await client.get_me()
             logger.info(f"Обрабатывается аккаунт: {me.username or me.id}")
 
-            # Попытка подписки
-            await client(JoinChannelRequest(channel_identifier))
-            success += 1
-            logger.success(f"Подписан: {session_name}")
-            await msg.edit_text(
-                msg.text + f"\n✅ {session_name} - подписан"
-            )
+            if is_invite_link:
+                # Попытка присоединиться по хешу приглашения
+                try:
+                    await client(ImportChatInviteRequest(invite_hash))
+                    success += 1
+                    logger.success(f"✅ Присоединился по приглашению: {session_name}")
+                    await msg.edit_text(msg.text + f"\n✅ {session_name} - подписался (приглашение)")
+                except InviteRequestSentError:
+                    success += 1  # Считаем успешным, запрос отправлен
+                    logger.info(f"📨 Запрос на вступление отправлен: {session_name}")
+                    await msg.edit_text(msg.text + f"\n📨 {session_name} - запрос отправлен")
+                except InviteHashExpiredError:
+                    failed += 1
+                    logger.error(f"💀 Приглашение устарело: {session_name}")
+                    await msg.edit_text(msg.text + f"\n❌ {session_name} - приглашение недействительно")
+                except InviteHashInvalidError:
+                    failed += 1
+                    logger.error(f"📛 Неверный хеш приглашения: {session_name}")
+                    await msg.edit_text(msg.text + f"\n❌ {session_name} - неверная ссылка")
+                except FloodWaitError as e:
+                    logger.warning(f"⏱ FloodWait {e.seconds} сек для {session_name}")
+                    await msg.edit_text(msg.text + f"\n⏱ {session_name} - ждём {e.seconds} сек")
+                    await asyncio.sleep(e.seconds)
+                    # Повтор после ожидания
+                    try:
+                        await client(ImportChatInviteRequest(invite_hash))
+                        success += 1
+                        await msg.edit_text(msg.text + f"\n✅ {session_name} - подписался (после FloodWait)")
+                    except Exception as retry_e:
+                        failed += 1
+                        logger.error(f"❌ Ошибка после FloodWait: {retry_e}")
+                        await msg.edit_text(msg.text + f"\n❌ {session_name} - ошибка после ожидания")
 
-        except ValueError as e:
-            error_msg = str(e).lower()
-            if "already in the channel" in error_msg or "already in" in error_msg:
-                logger.info(f"Аккаунт {session_name} уже подписан")
-                await msg.edit_text(
-                    msg.text + f"\n✔️ {session_name} - уже подписан"
-                )
-                success += 1
-            elif "no user has" in error_msg or "username" in error_msg:
-                logger.error(f"Канал не найден для {session_name}: {e}")
-                await msg.edit_text(
-                    msg.text + f"\n❌ {session_name} - канал не найден"
-                )
-                failed += 1
-                # channel_not_found = True
             else:
-                logger.error(f"Ошибка для {session_name}: {e}")
-                await msg.edit_text(
-                    msg.text + f"\n❌ {session_name} - ошибка: {type(e).__name__}"
-                )
-                failed += 1
-
-        except UsernameNotOccupiedError:
-            logger.error(f"Канал не найден для {session_name}")
-            await msg.edit_text(
-                msg.text + f"\n❌ {session_name} - канал не найден"
-            )
-            failed += 1
-            channel_not_found = True
-
-        except UsernameInvalidError:
-            logger.error(f"Неверный username канала для {session_name}")
-            await msg.edit_text(
-                msg.text + f"\n❌ {session_name} - неверный username канала"
-            )
-            failed += 1
-            channel_not_found = True
-
-        except FrozenMethodInvalidError:
-            logger.error(f"Аккаунт {session_name} заморожен")
-            await msg.edit_text(
-                msg.text + f"\n🧊 {session_name} - заморожен"
-            )
-            failed += 1
-
-        except FloodWaitError as e:
-            logger.warning(f"FloodWait {session_name}: {e.seconds} сек")
-            await msg.edit_text(
-                msg.text + f"\n⏱ {session_name} - ожидание {e.seconds} сек"
-            )
-            await asyncio.sleep(e.seconds)
-            # Повторная попытка после ожидания
-            try:
-                await client(JoinChannelRequest(channel_identifier))
-                success += 1
-                logger.success(f"Подписан после ожидания: {session_name}")
-                await msg.edit_text(
-                    msg.text + f"\n✅ {session_name} - подписан (после ожидания)"
-                )
-            except Exception as retry_error:
-                logger.error(f"Ошибка после FloodWait для {session_name}: {retry_error}")
-                await msg.edit_text(
-                    msg.text + f"\n❌ {session_name} - ошибка после ожидания"
-                )
-                failed += 1
-
-        except (ChannelPrivateError, InviteHashExpiredError) as e:
-            logger.warning(f"Канал недоступен для {session_name}: {e}")
-            await msg.edit_text(
-                msg.text + f"\n❌ {session_name} - доступ запрещён"
-            )
-            failed += 1
+                # Публичный канал — используем JoinChannelRequest
+                try:
+                    await client(JoinChannelRequest(username))
+                    success += 1
+                    logger.success(f"✅ Подписан на публичный канал: {session_name}")
+                    await msg.edit_text(msg.text + f"\n✅ {session_name} - подписался")
+                except ValueError as e:
+                    if "already in" in str(e).lower():
+                        success += 1
+                        await msg.edit_text(msg.text + f"\n✔️ {session_name} - уже подписан")
+                    elif "no user has" in str(e).lower() or "username not found" in str(e).lower():
+                        failed += 1
+                        channel_not_found = True
+                        await msg.edit_text(msg.text + f"\n❌ {session_name} - канал не найден")
+                    else:
+                        raise
+                except UsernameNotOccupiedError:
+                    failed += 1
+                    channel_not_found = True
+                    await msg.edit_text(msg.text + f"\n❌ {session_name} - username не занят")
+                except UsernameInvalidError:
+                    failed += 1
+                    channel_not_found = True
+                    await msg.edit_text(msg.text + f"\n❌ {session_name} - неверный username")
+                except FloodWaitError as e:
+                    await msg.edit_text(msg.text + f"\n⏱ {session_name} - FloodWait {e.seconds} сек")
+                    await asyncio.sleep(e.seconds)
+                    try:
+                        await client(JoinChannelRequest(username))
+                        success += 1
+                        await msg.edit_text(msg.text + f"\n✅ {session_name} - подписался (после ожидания)")
+                    except Exception as retry_e:
+                        failed += 1
+                        logger.error(f"❌ Ошибка после FloodWait: {retry_e}")
+                        await msg.edit_text(msg.text + f"\n❌ {session_name} - ошибка после ожидания")
+                except ChannelPrivateError:
+                    failed += 1
+                    await msg.edit_text(msg.text + f"\n🔒 {session_name} - канал приватный (требуется приглашение)")
 
         except sqlite3.DatabaseError as e:
-            logger.error(f"Ошибка БД для {session_name}: {e}")
-            await msg.edit_text(
-                msg.text + f"\n💾 {session_name} - повреждена база данных"
-            )
-            failed += 1
             db_errors += 1
-            # НЕ пытаемся отключиться в finally, так как БД повреждена
+            failed += 1
+            logger.error(f"💾 Ошибка БД: {session_name} — {e}")
+            await msg.edit_text(msg.text + f"\n💾 {session_name} - повреждена сессия")
             if client and client.is_connected():
                 try:
-                    # Принудительно закрываем только сетевое соединение
                     if hasattr(client, '_sender') and client._sender:
                         await client._sender.disconnect()
                 except:
                     pass
-            client = None  # Обнуляем, чтобы finally не пытался отключиться
-
-            # Ждём интервал перед следующим аккаунтом даже при ошибке БД
-            if session_file != session_files[-1]:
-                await asyncio.sleep(interval)
-            continue
-
-        except Exception as e:
-            logger.exception(f"Неожиданная ошибка для {session_name}: {e}")
-            await msg.edit_text(
-                msg.text + f"\n❌ {session_name} - ошибка: {type(e).__name__}"
-            )
+            client = None
+        except FrozenMethodInvalidError:
             failed += 1
+            await msg.edit_text(msg.text + f"\n🧊 {session_name} - аккаунт заморожен")
+        except Exception as e:
+            failed += 1
+            logger.exception(f"💥 Неожиданная ошибка для {session_name}: {e}")
+            await msg.edit_text(msg.text + f"\n💥 {session_name} - критическая ошибка")
 
         finally:
             await safe_disconnect(client, session_name)
 
-        # Ждём интервал перед следующим аккаунтом
-        if session_file != session_files[-1]:  # Не ждать после последнего
+        # Интервал между аккаунтами (кроме последнего)
+        if i < len(session_files) - 1:
             await asyncio.sleep(interval)
 
-    # Формируем финальное сообщение
+    # Финальное сообщение
     final_text = (
-        f"🔄 Подписка на: {target_channel}\n"
-        f"Идентификатор: {channel_identifier}\n"
-        f"Интервал: {interval} сек\n"
-        f"Аккаунтов: {len(session_files)}\n\n"
-        f"✅ Готово!\n"
+        f"✅ Подписка завершена!\n\n"
+        f"Цель: {channel_input}\n"
         f"Успешно: {success}\n"
         f"Ошибок: {failed}"
     )
-
-    if db_errors > 0:
+    if db_errors:
         final_text += f"\n💾 Повреждённых сессий: {db_errors}"
+    if channel_not_found and not is_invite_link:
+        final_text += f"\n\n⚠️ Канал '{username}' не найден! Проверьте username."
 
-    if channel_not_found:
-        final_text += (
-            f"\n\n⚠️ ВНИМАНИЕ: Канал '{channel_identifier}' не найден!\n"
-            f"Проверьте правильность username канала."
-        )
-
-    await msg.edit_text(
-        final_text,
-        reply_markup=main_keyboard(user_id in ADMIN_IDS)
-    )
-
+    await msg.edit_text(final_text, reply_markup=main_keyboard(user_id in ADMIN_IDS))
     try:
         await callback.answer()
     except TelegramBadRequest:
